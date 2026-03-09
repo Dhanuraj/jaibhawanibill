@@ -36,19 +36,36 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
 .ni.active .ni-ic{transform:scale(1.1)}
 
 /* ── HOME ── */
-.home-wrap{padding:16px}
-.hd-greet{font-family:'Poppins',sans-serif;font-size:22px;font-weight:800;color:var(--ink);margin-bottom:4px}
-.hd-sub{font-size:12px;color:var(--ink3);font-weight:600;margin-bottom:18px}
-.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
-.stat-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:14px;box-shadow:var(--sh)}
+.home-wrap{padding:0 0 16px}
+.home-hero{padding:28px 20px 24px;position:relative;overflow:hidden}
+.home-hero,.home-hero *{color:#fff!important}
+[data-theme="warm"] .home-hero{background:linear-gradient(135deg,#c45e1a 0%,#e8722a 50%,#f5a366 100%)}
+[data-theme="sky"] .home-hero{background:linear-gradient(135deg,#0d47a1 0%,#1565c0 50%,#42a5f5 100%)}
+[data-theme="forest"] .home-hero{background:linear-gradient(135deg,#145a2e 0%,#1b7a3e 50%,#66bb6a 100%)}
+[data-theme="dark"] .home-hero{background:linear-gradient(135deg,#2d2860 0%,#5c52d5 50%,#9485fa 100%)}
+[data-theme="rose"] .home-hero{background:linear-gradient(135deg,#a0134a 0%,#d81b60 50%,#f06292 100%)}
+.home-hero::before{content:'';position:absolute;top:-40px;right:-30px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.1);pointer-events:none}
+.home-hero::after{content:'';position:absolute;bottom:-30px;right:10px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.07);pointer-events:none}
+.home-tag{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;opacity:.75;margin-bottom:8px}
+.home-title{font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;opacity:.85;margin-bottom:1px}
+.home-brand{font-family:'Poppins',sans-serif;font-size:26px;font-weight:800;line-height:1.15;margin-bottom:8px;text-shadow:0 2px 10px rgba(0,0,0,.18)}
+.home-tagline{font-size:12px;opacity:.75;font-weight:600}
+.home-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 16px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.stat-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:14px;box-shadow:var(--sh);text-align:center}
 .stat-n{font-family:'Poppins',sans-serif;font-size:28px;font-weight:800;color:var(--accent)}
 .stat-l{font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
-.home-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.hc{background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:16px 14px;box-shadow:var(--sh);cursor:pointer;transition:all .14s;-webkit-user-select:none;user-select:none;animation:su .22s ease}
-.hc:active{transform:scale(.97);opacity:.85}
-.hc-ico{font-size:28px;margin-bottom:8px}
-.hc-lbl{font-family:'Poppins',sans-serif;font-weight:700;font-size:13px;color:var(--ink)}
-.hc-sub{font-size:11px;color:var(--ink3);margin-top:2px}
+.home-menu{padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.hc{background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:15px 16px;box-shadow:var(--sh);cursor:pointer;transition:all .14s;-webkit-user-select:none;user-select:none;animation:su .22s ease;display:flex;align-items:center;gap:14px}
+.hc:active{transform:scale(.98);opacity:.85}
+.hc-icon-wrap{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.hc-icon-wrap.c-in{background:var(--abg);border:1.5px solid var(--abrd)}
+.hc-icon-wrap.c-out{background:var(--rbg);border:1.5px solid var(--rbrd)}
+.hc-icon-wrap.c-lib{background:rgba(33,150,243,.09);border:1.5px solid rgba(33,150,243,.22)}
+.hc-icon-wrap.c-bills{background:rgba(103,58,183,.09);border:1.5px solid rgba(103,58,183,.22)}
+.hc-info{flex:1}
+.hc-lbl{font-family:'Poppins',sans-serif;font-weight:700;font-size:15px;color:var(--ink)}
+.hc-sub{font-size:12px;color:var(--ink3);margin-top:2px}
+.hc-arr{color:var(--ink3);font-size:22px;font-weight:700;flex-shrink:0}
 
 /* ── BILL SCREEN ── */
 .bill-wrap{padding:12px 14px}
@@ -259,6 +276,11 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
 .fi-arr{color:var(--ink3);font-size:20px;font-weight:700}
 
 /* ── TOAST ── */
+.pdf-modal-inner{background:var(--card);width:100%;max-width:430px;margin:0 auto;display:flex;flex-direction:column;height:100vh;max-height:100vh}
+.pdf-modal-header{padding:13px 16px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--card)}
+.pdf-modal-body{flex:1;overflow-y:auto;background:#ddd;padding:8px}
+.pdf-modal-footer{padding:12px 14px;display:flex;gap:10px;border-top:1.5px solid var(--border);flex-shrink:0;background:var(--card)}
+#m-pdf{align-items:stretch!important}
 .toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 20px;border-radius:24px;font-size:13px;font-weight:800;opacity:0;transition:all .28s;z-index:999;pointer-events:none;white-space:nowrap;max-width:90%}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast.err{background:var(--red)}
@@ -287,17 +309,37 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
     <div class="tb-title">🙏 Jai Bhawani Industries</div>
   </div>
   <div class="home-wrap">
-    <div class="hd-greet">Jai Bhawani 🙏</div>
-    <div class="hd-sub">Manage your bills easily</div>
-    <div class="stat-row">
-      <div class="stat-card"><div class="stat-n" id="h-it">0</div><div class="stat-l">Library Items</div></div>
-      <div class="stat-card"><div class="stat-n" id="h-bl">0</div><div class="stat-l">Saved Bills</div></div>
+    <div class="home-hero">
+      <div class="home-tag">JAI BHAWANI 🙏</div>
+      <div class="home-title">Smart Billing</div>
+      <div class="home-brand">Jai Bhawani Industries</div>
+      <div class="home-tagline">Track sales, replacements &amp; collections — easily.</div>
     </div>
-    <div class="home-cards">
-      <div class="hc" onclick="openBillPicker()"><div class="hc-ico">🏭</div><div class="hc-lbl">New Bill</div><div class="hc-sub">Create sale bill</div></div>
-      <div class="hc" onclick="goTo('library')"><div class="hc-ico">📦</div><div class="hc-lbl">Library</div><div class="hc-sub">Manage items</div></div>
-      <div class="hc" onclick="goTo('bills')"><div class="hc-ico">🧾</div><div class="hc-lbl">Saved Bills</div><div class="hc-sub">View history</div></div>
-      <div class="hc" onclick="goTo('settings')"><div class="hc-ico">⚙️</div><div class="hc-lbl">Settings</div><div class="hc-sub">Theme & prefs</div></div>
+    <div class="home-stats">
+      <div class="stat-card"><div class="stat-n" id="h-it">0</div><div class="stat-l">Saved Items</div></div>
+      <div class="stat-card"><div class="stat-n" id="h-bl">0</div><div class="stat-l">Total Bills</div></div>
+    </div>
+    <div class="home-menu">
+      <div class="hc" onclick="chooseBillType('in')">
+        <div class="hc-icon-wrap c-in">🏭</div>
+        <div class="hc-info"><div class="hc-lbl">In-Company Bill</div><div class="hc-sub">Internal / within company sales</div></div>
+        <div class="hc-arr">›</div>
+      </div>
+      <div class="hc" onclick="chooseBillType('out')">
+        <div class="hc-icon-wrap c-out">🚚</div>
+        <div class="hc-info"><div class="hc-lbl">Out-Company Bill</div><div class="hc-sub">External / outside company sales</div></div>
+        <div class="hc-arr">›</div>
+      </div>
+      <div class="hc" onclick="goTo('library')">
+        <div class="hc-icon-wrap c-lib">📦</div>
+        <div class="hc-info"><div class="hc-lbl">Item Library</div><div class="hc-sub">Save &amp; manage item prices</div></div>
+        <div class="hc-arr">›</div>
+      </div>
+      <div class="hc" onclick="goTo('bills')">
+        <div class="hc-icon-wrap c-bills">🧾</div>
+        <div class="hc-info"><div class="hc-lbl">Saved Bills</div><div class="hc-sub">View all previous bills</div></div>
+        <div class="hc-arr">›</div>
+      </div>
     </div>
   </div>
 </div>
@@ -494,7 +536,8 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
     </div>
     <div class="bill-cta">
       <button class="btn btn-g" onclick="if(confirm('Clear this bill?'))resetBill()">🗑 Clear</button>
-      <button class="btn btn-wa" onclick="shareCurrentBillWA()">📲 Share</button>
+      <button class="btn btn-wa" onclick="shareCurrentBillWA()">📲 WA</button>
+      <button class="btn" onclick="openCurrentBillPDF()" style="background:var(--abg);border:1.5px solid var(--abrd);color:var(--accent);font-weight:800">📄 PDF</button>
       <button class="btn btn-a" onclick="openSave()">💾 Save</button>
     </div>
   </div>
@@ -585,6 +628,21 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
       <div class="ss-row" onclick="togglePref('showReplacements')"><div class="sr-ico" style="background:var(--rbg);border:1px solid var(--rbrd)">🔄</div><div class="sr-info"><div class="sr-t">Show Replacements</div><div class="sr-s">Show replacement deductions in bills</div></div><div class="tog" id="pref-showReplacements"></div></div>
       <div class="ss-row" onclick="togglePref('showBillId')"><div class="sr-ico" style="background:var(--abg);border:1px solid var(--abrd)">🆔</div><div class="sr-info"><div class="sr-t">Show Bill ID</div><div class="sr-s">Show generated Bill ID on bills</div></div><div class="tog" id="pref-showBillId"></div></div>
     </div>
+    <div class="ss-title">🏭 Company Contact Numbers</div>
+    <div class="ss-card">
+      <div style="padding:14px">
+        <div style="font-size:11px;color:var(--ink3);font-weight:700;margin-bottom:12px;line-height:1.5">These numbers appear on every PDF bill footer &amp; WhatsApp message.</div>
+        <div style="margin-bottom:10px">
+          <div class="flbl">Contact Number 1</div>
+          <input class="inp" type="tel" id="co-phone1" placeholder="+91 98765-43210" maxlength="18" onblur="saveCompanyInfo()" onchange="saveCompanyInfo()"/>
+        </div>
+        <div>
+          <div class="flbl">Contact Number 2</div>
+          <input class="inp" type="tel" id="co-phone2" placeholder="+91 98765-43211" maxlength="18" onblur="saveCompanyInfo()" onchange="saveCompanyInfo()"/>
+        </div>
+      </div>
+    </div>
+
     <div class="ss-title">📋 Data Management</div>
     <div class="ss-card">
       <div class="ss-row" onclick="if(confirm('Delete ALL saved bills?')){bills=[];sv(BK,bills);filterBills();toast('All bills cleared','e')}"><div class="sr-ico" style="background:var(--rbg);border:1px solid var(--rbrd)">🗑</div><div class="sr-info"><div class="sr-t">Clear All Bills</div><div class="sr-s">Permanently delete saved bills</div></div><div style="color:var(--red);font-size:13px;font-weight:800">Clear</div></div>
@@ -606,7 +664,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
 <!-- BOTTOM NAV -->
 <div class="bnav-outer"><div class="bnav">
   <div class="ni active" id="nav-home" onclick="goTo('home')"><div class="ni-ic">🏠</div><div class="ni-l">Home</div></div>
-  <div class="ni" id="nav-bill" onclick="openBillPicker()"><div class="ni-ic">➕</div><div class="ni-l">Bill</div></div>
+  <div class="ni" id="nav-bill" onclick="openBillTypeSheet()"><div class="ni-ic">➕</div><div class="ni-l">Bill</div></div>
   <div class="ni" id="nav-library" onclick="goTo('library')"><div class="ni-ic">📦</div><div class="ni-l">Library</div></div>
   <div class="ni" id="nav-bills" onclick="goTo('bills')"><div class="ni-ic">🧾</div><div class="ni-l">Bills</div></div>
   <div class="ni" id="nav-settings" onclick="goTo('settings')"><div class="ni-ic">⚙️</div><div class="ni-l">Settings</div></div>
@@ -630,6 +688,42 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
         <div style="width:48px;height:48px;border-radius:13px;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🚚</div>
         <div style="flex:1"><div style="font-weight:800;font-size:15px;color:var(--ink)">Out-Company Bill</div><div style="font-size:12px;color:var(--ink3);margin-top:2px">External / outside company sales</div></div>
         <div style="color:var(--red);font-size:20px;font-weight:700">›</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PDF PREVIEW MODAL -->
+<div class="ov" id="m-pdf" style="align-items:stretch">
+  <div class="pdf-modal-inner">
+    <div class="pdf-modal-header">
+      <button class="btn btn-g btn-xs" onclick="closeM('m-pdf')" style="flex-shrink:0;font-size:18px;padding:6px 11px">‹</button>
+      <div style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:800;flex:1;color:var(--ink)">📄 Bill Preview</div>
+      <button class="btn btn-g btn-xs" onclick="printBillPDF()" style="flex-shrink:0">🖨 Print</button>
+    </div>
+    <div class="pdf-modal-body" id="pdf-preview"></div>
+    <div class="pdf-modal-footer">
+      <button class="btn btn-a" onclick="printBillPDF()" style="flex:1;justify-content:center;padding:13px;font-size:14px">🖨 Print</button>
+      <button class="btn btn-wa" onclick="sharePDFViaWA()" style="flex:1;justify-content:center;padding:13px;font-size:14px">📲 WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<!-- BILL TYPE SHEET -->
+<div class="ov" id="m-billtype">
+  <div class="sheet">
+    <div class="sh-knob"></div>
+    <div style="font-family:'Poppins',sans-serif;font-size:17px;font-weight:800;color:var(--ink);margin-bottom:18px;text-align:center">📋 Choose Bill Type</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div onclick="chooseBillType('in')" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--abg);border:2px solid var(--abrd);border-radius:14px;cursor:pointer" ontouchstart="this.style.opacity='.7'" ontouchend="this.style.opacity='1'">
+        <div style="width:50px;height:50px;border-radius:13px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">🏭</div>
+        <div style="flex:1"><div style="font-weight:800;font-size:15px;color:var(--ink)">In-Company Bill</div><div style="font-size:12px;color:var(--ink3);margin-top:3px">Internal / within company sales</div></div>
+        <div style="color:var(--accent);font-size:24px;font-weight:700">›</div>
+      </div>
+      <div onclick="chooseBillType('out')" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--rbg);border:2px solid var(--rbrd);border-radius:14px;cursor:pointer" ontouchstart="this.style.opacity='.7'" ontouchend="this.style.opacity='1'">
+        <div style="width:50px;height:50px;border-radius:13px;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">🚚</div>
+        <div style="flex:1"><div style="font-weight:800;font-size:15px;color:var(--ink)">Out-Company Bill</div><div style="font-size:12px;color:var(--ink3);margin-top:3px">External / outside company sales</div></div>
+        <div style="color:var(--red);font-size:24px;font-weight:700">›</div>
       </div>
     </div>
   </div>
@@ -799,7 +893,7 @@ function goTo(s){
   if(s==='home')refreshHome();
   if(s==='library'){lib=ld(LK);renderLibItems();}
   if(s==='bills'){bills=ld(BK);filterBills();}
-  if(s==='settings')initPrefs();
+  if(s==='settings'){initPrefs();loadCompanyInfo();}
   window.scrollTo(0,0);
 }
 
@@ -810,8 +904,9 @@ function refreshHome(){
 }
 
 // ── BILL TYPE ──
-function openBillPicker(){openM('m-billtype')}
-function chooseBillType(type){closeM('m-billtype');setTimeout(()=>{goTo('bill');resetBill(type)},120)}
+function openBillPicker(){openBillTypeSheet();}
+function openBillTypeSheet(){openM('m-billtype');}
+function chooseBillType(type){closeM('m-billtype');goTo('bill');resetBill(type);}
 function setBillType(type){
   billType=type;
   const isIn=type==='in';
@@ -911,11 +1006,10 @@ function getReceiver(){
 
 // ── ROWS ──
 function mkRow(id,cls){
-  _sno++;
   const d=document.createElement('div');
   d.className='rw';d.id='rw-'+id;
   d.innerHTML=`<div class="irow c6">
-    <span class="row-sno">${_sno}</span>
+    <span class="row-sno" id="sno-${id}">—</span>
     <input type="text" placeholder="Item name" id="n-${id}" oninput="recalc()" autocomplete="off"/>
     <input type="number" placeholder="0" id="p-${id}" oninput="recalc()" step="1"/>
     <input type="number" placeholder="Qty" id="q-${id}" oninput="recalc()" step="1" min="1"/>
@@ -924,12 +1018,16 @@ function mkRow(id,cls){
   </div>`;
   return d;
 }
+function renumberRows(){
+  sRows.forEach((r,i)=>{const el=document.getElementById('sno-'+r.id);if(el)el.textContent=i+1;});
+  rRows.forEach((r,i)=>{const el=document.getElementById('sno-'+r.id);if(el)el.textContent=i+1;});
+}
 function addSale(pre){
   const id='s'+(++rid);sRows.push({id});
   document.getElementById('sale-body').appendChild(mkRow(id,'a'));
   if(pre){document.getElementById('n-'+id).value=pre.name;document.getElementById('p-'+id).value=pre.price;}
   else setTimeout(()=>document.getElementById('n-'+id)?.focus(),60);
-  recalc();
+  renumberRows();recalc();
 }
 function addRepl(pre){
   if(!replOn)toggleRepl();
@@ -939,12 +1037,12 @@ function addRepl(pre){
   container.appendChild(mkRow(id,'r'));
   if(pre){document.getElementById('n-'+id).value=pre.name;document.getElementById('p-'+id).value=pre.price;}
   else setTimeout(()=>document.getElementById('n-'+id)?.focus(),120);
-  recalc();
+  renumberRows();recalc();
 }
 function delRow(id){
   sRows=sRows.filter(r=>r.id!==id);rRows=rRows.filter(r=>r.id!==id);
   const el=document.getElementById('rw-'+id);
-  if(el){el.style.cssText='opacity:0;transform:translateX(6px);transition:all .18s';setTimeout(()=>el.remove(),190);}
+  if(el){el.style.cssText='opacity:0;transform:translateX(6px);transition:all .18s';setTimeout(()=>{el.remove();renumberRows();},190);}
   if(rRows.length===0&&document.getElementById('repl-body')){
     document.getElementById('repl-body').innerHTML='<div class="empty" style="padding:14px"><div class="empty-ico" style="font-size:20px">🔄</div><div class="empty-s">Tap "+ Add item" above</div></div>';
   }
@@ -968,7 +1066,8 @@ function recalc(){
   const rawNet=sT-rT-adv;
   const net=Math.max(0,rawNet);
   const extra=rawNet<0?Math.abs(rawNet):0;
-  $t('sc-chip',sRows.length+' item'+(sRows.length!==1?'s':''));
+  const _filled=sRows.filter(r=>(parseFloat(document.getElementById('p-'+r.id)?.value)||0)>0).length;
+  $t('sc-chip',_filled+' item'+(_filled!==1?'s':''));
   const sp=document.getElementById('s-pill');
   if(sp)sp.style.display=sT>0?'block':'none';
   $t('s-pv',INR(sT));
@@ -1398,6 +1497,7 @@ function filterBills(){
           <div class="status-badge ${billStatus(b)}" style="margin-bottom:4px">${billStatusIcon(b)} ${billStatusLabel(b)}</div>
           <div style="display:flex;gap:6px">
             <button class="btn-wa btn-sm" onclick="shareBillWA('${b.id}')">📲 WA</button>
+            <button class="btn btn-xs" onclick="openBillPDF('${b.id}')" style="background:var(--abg);border:1px solid var(--abrd);color:var(--accent);font-weight:800;padding:5px 9px;border-radius:8px;font-size:11px;cursor:pointer">📄 PDF</button>
             <button class="btn btn-r btn-xs" onclick="delBill('${b.id}')">🗑</button>
           </div>
         </div>
@@ -1553,10 +1653,200 @@ function shareBillWA(bid){
 }
 
 // ── DELETE BILL ──
+// ── COMPANY INFO ──
+const CI_KEY='jbb_company';
+function getCompanyInfo(){try{return JSON.parse(localStorage.getItem(CI_KEY)||'{}')}catch{return{}}}
+function saveCompanyInfo(){
+  const p1=(document.getElementById('co-phone1')?.value||'').trim();
+  const p2=(document.getElementById('co-phone2')?.value||'').trim();
+  localStorage.setItem(CI_KEY,JSON.stringify({phone1:p1,phone2:p2}));
+  toast('Contact numbers saved');
+}
+function loadCompanyInfo(){
+  const ci=getCompanyInfo();
+  const e1=document.getElementById('co-phone1');
+  const e2=document.getElementById('co-phone2');
+  if(e1&&ci.phone1)e1.value=ci.phone1;
+  if(e2&&ci.phone2)e2.value=ci.phone2;
+}
+
 function delBill(id){
   const b=bills.find(x=>x.id===id);
   if(!confirm('Delete bill "'+b?.name+'"?'))return;
   bills=bills.filter(x=>x.id!==id);sv(BK,bills);filterBills();toast('Bill deleted');
+}
+
+// ── PDF GENERATION ──
+let _pdfBillData=null;
+function _pn(n){return Number(n).toLocaleString('en-IN');}
+function buildBillHTML(b,prefs){
+  const ci=getCompanyInfo();
+  const ph=[ci.phone1,ci.phone2].filter(Boolean);
+  const rem=billRemainingDue(b);
+  const statusCls=billStatus(b);
+  const statusLbl=billStatusLabel(b);
+  const statusIco=billStatusIcon(b);
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>'
+  +'<style>'
+  +'*{box-sizing:border-box;margin:0;padding:0}'
+  +'body{font-family:\'Segoe UI\',Arial,sans-serif;color:#1e1c18;background:#fff;max-width:600px;margin:0 auto}'
+  +'.hdr{background:linear-gradient(135deg,#c45e1a,#e8722a,#f5a366);color:#fff;padding:22px 20px 18px;text-align:center;position:relative;overflow:hidden}'
+  +'.hdr::before{content:"";position:absolute;top:-30px;right:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.1)}'
+  +'.hdr-co{font-size:22px;font-weight:800;position:relative}'
+  +'.hdr-tag{font-size:11px;opacity:.8;margin-top:4px;position:relative}'
+  +'.hdr-ph{font-size:13px;font-weight:700;margin-top:10px;opacity:.92;position:relative}'
+  +'.meta{display:flex;flex-wrap:wrap;gap:0;background:#f9f6f2;border-bottom:1.5px solid #e8e3d9}'
+  +'.mi{padding:10px 14px;flex:1;min-width:120px}'
+  +'.ml{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#a09a92;margin-bottom:3px}'
+  +'.mv{font-weight:700;color:#1e1c18;font-size:12px}'
+  +'.chip{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:800;text-transform:uppercase}'
+  +'.chip.paid{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7}'
+  +'.chip.due{background:#ffebee;color:#c62828;border:1px solid #ef9a9a}'
+  +'.chip.pending{background:#fff8e1;color:#f57f17;border:1px solid #ffe082}'
+  +'.sec{padding:12px 16px}'
+  +'.sec-t{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#a09a92;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid #f0ede6}'
+  +'.sec-t.red{color:#e53935;border-color:#fdd}'
+  +'table{width:100%;border-collapse:collapse;font-size:12px}'
+  +'th{background:#f3f0ea;padding:7px 6px;font-size:9px;text-transform:uppercase;font-weight:800;color:#6b6560;letter-spacing:.5px;border-bottom:1.5px solid #e8e3d9}'
+  +'th:first-child{text-align:center;width:26px}'
+  +'th:nth-child(n+2){text-align:left}'
+  +'th:last-child,th:nth-child(4),th:nth-child(5){text-align:right}'
+  +'td{padding:8px 6px;border-bottom:1px solid #f5f2ee;vertical-align:middle}'
+  +'td:first-child{text-align:center;color:#bbb;font-size:10px;font-weight:700}'
+  +'td:nth-child(3),td:nth-child(4),td:nth-child(5){text-align:right;font-weight:700}'
+  +'.tr-total td{background:#fff8f4;color:#e8722a;font-weight:800;border-top:2px solid #e8e3d9;padding:9px 6px}'
+  +'.tr-repl td{color:#e53935}'
+  +'.tr-rtotal td{background:#fff5f5;color:#e53935;font-weight:800;border-top:2px solid #ffd5d5;padding:9px 6px}'
+  +'.sumbox{margin:8px 16px;border:1.5px solid #e8e3d9;border-radius:10px;overflow:hidden}'
+  +'.sr{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #f0ede6;font-size:12px}'
+  +'.sr:last-child{border-bottom:none}'
+  +'.sr.big{background:#fff8f4;padding:12px 14px;font-weight:800;font-size:15px;color:#e8722a}'
+  +'.sr.green{color:#2e7d32}.sr.red{color:#e53935}.sr.orange{color:#f57f17}'
+  +'.ph-row{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid #f0ede6;font-size:11px}'
+  +'.ph-row:last-child{border-bottom:none}'
+  +'.foot{background:#f3f0ea;padding:14px 16px;text-align:center;font-size:10px;color:#a09a92;margin-top:8px;border-top:1.5px solid #e8e3d9}'
+  +'.foot strong{color:#e8722a}'
+  +'@media print{.hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact}.sumbox .sr.big{-webkit-print-color-adjust:exact;print-color-adjust:exact}}'
+  +'</style></head><body>'
+  +'<div class="hdr">'
+  +'<div class="hdr-co">\uD83D\uDE4F Jai Bhawani Industries</div>'
+  +'<div class="hdr-tag">Jai Mata Di \uD83D\uDE4F</div>'
+  +(ph.length?'<div class="hdr-ph">'+ph.map(p=>'\uD83D\uDCDE '+p).join('&nbsp;&nbsp;\u00B7&nbsp;&nbsp;')+'</div>':'')
+  +'</div>'
+  +'<div class="meta">'
+  +'<div class="mi"><div class="ml">Bill Name</div><div class="mv">'+(b.name||'\u2014')+'</div></div>'
+  +'<div class="mi"><div class="ml">Type</div><div class="mv">'+(b.billType==='in'?'\uD83C\uDFED In-Company':'\uD83D\uDE9A Out-Company')+'</div></div>'
+  +'<div class="mi"><div class="ml">Date</div><div class="mv">'+(b.date||'\u2014')+'</div></div>'
+  +'<div class="mi"><div class="ml">Status</div><div class="mv"><span class="chip '+statusCls+'">'+statusIco+' '+statusLbl+'</span></div></div>'
+  +'</div>'
+  +(prefs.showParty&&b.party?'<div class="sec" style="padding-bottom:6px"><div style="font-size:13px;font-weight:700">\uD83D\uDC64 '+b.party+(prefs.showPhone&&b.partyPhone?' &nbsp;\u00B7\u00B7 \uD83D\uDCDE '+b.partyPhone:'')+'</div>'+(b.vehicle&&prefs.showVehicle&&(b.vehicle.driver||b.vehicle.number)?'<div style="font-size:11px;color:#6b6560;margin-top:4px">'+(b.vehicle.driver?'\uD83D\uDE97 '+b.vehicle.driver:'')+(b.vehicle.phone?' \u00B7 \uD83D\uDCDE '+b.vehicle.phone:'')+(b.vehicle.number?' \u00B7 \uD83D\uDD22 '+b.vehicle.number:'')+'</div>':'')+(b.vehicle&&b.vehicle.photo?'<img src="'+b.vehicle.photo+'" style="width:100%;max-height:90px;object-fit:cover;border-radius:7px;margin-top:8px;border:1px solid #e8e3d9"/>':'')+'</div>':'')
+  +(b.saleItems&&b.saleItems.length?'<div class="sec"><div class="sec-t">\uD83D\uDCE6 Items Sold</div><table><thead><tr><th>#</th><th>Item</th><th style="text-align:right">\u20B9/pc</th><th style="text-align:right">Qty</th><th style="text-align:right">Total</th></tr></thead><tbody>'
+  +b.saleItems.map((i,idx)=>i.total>0?'<tr><td>'+(idx+1)+'</td><td>'+i.name+'</td><td>\u20B9'+_pn(i.price)+'</td><td>'+i.qty+'</td><td>\u20B9'+_pn(i.total)+'</td></tr>':'').join('')
+  +'<tr class="tr-total"><td colspan="4">Items Total</td><td>\u20B9'+_pn(b.sT)+'</td></tr></tbody></table></div>':'')
+  +(prefs.showReplacements&&b.replItems&&b.replItems.length&&b.rT>0?'<div class="sec"><div class="sec-t red">\uD83D\uDD04 Replacements Deducted</div><table><thead><tr><th>#</th><th>Item</th><th style="text-align:right">\u20B9/pc</th><th style="text-align:right">Qty</th><th style="text-align:right">Deducted</th></tr></thead><tbody>'
+  +b.replItems.map((i,idx)=>i.total>0?'<tr class="tr-repl"><td>'+(idx+1)+'</td><td>'+i.name+'</td><td>\u20B9'+_pn(i.price)+'</td><td>'+i.qty+'</td><td>\u2212\u20B9'+_pn(i.total)+'</td></tr>':'').join('')
+  +'<tr class="tr-rtotal"><td colspan="4">Total Deducted</td><td>\u2212\u20B9'+_pn(b.rT)+'</td></tr></tbody></table></div>':'')
+  +'<div class="sumbox">'
+  +(b.sT>0?'<div class="sr"><span>Items Total</span><span>\u20B9'+_pn(b.sT)+'</span></div>':'')
+  +(b.rT>0?'<div class="sr red"><span>\u2212 Replacements</span><span>\u2212\u20B9'+_pn(b.rT)+'</span></div>':'')
+  +(b.adv>0?'<div class="sr orange"><span>\u2212 Advance ('+(b.payMode==='upi'?'UPI':'Cash')+(prefs.showReceiver&&b.upiReceivedBy?' \u00B7 '+b.upiReceivedBy:'')+')</span><span>\u2212\u20B9'+_pn(b.adv)+'</span></div>':'')
+  +((b.payLog||[]).reduce((s,p)=>s+(parseFloat(p.amount)||0),0)>0?'<div class="sr green"><span>\u2212 Payments Received</span><span>\u2212\u20B9'+_pn((b.payLog||[]).reduce((s,p)=>s+(parseFloat(p.amount)||0),0))+'</span></div>':'')
+  +'<div class="sr big"><span>'+(rem<0?'Extra to Return':rem===0?'\u2705 Fully Settled':'Amount to Collect')+'</span><span>'+(rem<0?'Extra \u20B9'+_pn(Math.abs(rem)):'\u20B9'+_pn(Math.max(0,rem)))+'</span></div>'
+  +'</div>'
+  +(b.payLog&&b.payLog.length?'<div class="sec"><div class="sec-t">\uD83D\uDCB0 Payment History</div>'
+  +b.payLog.map(p=>'<div class="ph-row"><div><strong>'+(p.who||'Unknown')+'</strong>'+(p.phone?' \u00B7 \uD83D\uDCDE '+p.phone:'')+'<div style="font-size:9px;color:#a09a92;margin-top:2px">'+p.date+'</div></div><div style="color:#2e7d32;font-weight:800">+\u20B9'+_pn(p.amount)+'</div></div>').join('')
+  +'</div>':'')
+  +'<div class="foot"><strong>Jai Bhawani Industries</strong> \u2014 Jai Mata Di \uD83D\uDE4F<br/>'+(ph.length?ph.join(' &nbsp;\u00B7&nbsp; ')+'<br/>':'')+'<span style="font-size:9px">Generated via Jai Bhawani Bills App</span></div>'
+  +'</body></html>';
+}
+function _showPDF(b){
+  _pdfBillData=b;
+  const prefs=getPrefs();
+  const html=buildBillHTML(b,prefs);
+  const preview=document.getElementById('pdf-preview');
+  if(!preview)return;
+  preview.innerHTML='';
+  const iframe=document.createElement('iframe');
+  iframe.style.cssText='width:100%;height:100%;min-height:calc(100vh - 120px);border:none;background:#fff;display:block';
+  preview.appendChild(iframe);
+  iframe.srcdoc=html;
+  openM('m-pdf');
+}
+function openBillPDF(billId){
+  bills=ld(BK);
+  const b=bills.find(x=>x.id===billId);if(!b)return;
+  _showPDF(b);
+}
+function openCurrentBillPDF(){
+  if(!validateQty())return;
+  const sT=sRows.reduce((s,r)=>s+rowT(r.id),0);
+  if(sT===0){toast('Add items first','e');return;}
+  const rT=replOn?rRows.reduce((s,r)=>s+rowT(r.id),0):0;
+  const adv=advOn?(parseFloat(document.getElementById('adv-amt').value)||0):0;
+  const rawNet=sT-rT-adv;const net=Math.max(0,rawNet);
+  const getItems=rows=>rows.map(r=>({name:document.getElementById('n-'+r.id)?.value||'',price:parseFloat(document.getElementById('p-'+r.id)?.value)||0,qty:parseFloat(document.getElementById('q-'+r.id)?.value)||0,total:rowT(r.id)})).filter(x=>x.total>0);
+  _showPDF({
+    id:'tmp',
+    name:(document.getElementById('party-name')?.value||'Preview').trim()||'Preview',
+    billType,
+    party:(document.getElementById('party-name')?.value||'').trim(),
+    partyPhone:(document.getElementById('party-phone')?.value||'').trim(),
+    vehicle:vehicleOn?{driver:(document.getElementById('veh-driver')?.value||'').trim(),phone:(document.getElementById('veh-phone')?.value||'').trim(),number:(document.getElementById('veh-number')?.value||'').trim().toUpperCase(),photo:vehPhotoData||null}:null,
+    date:new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),
+    saleItems:getItems(sRows),replItems:getItems(rRows),sT,rT,adv,net,extra:rawNet<0?Math.abs(rawNet):0,
+    paymentStatus:'pending',payMode,upiReceivedBy:getReceiver(),payLog:[]
+  });
+}
+function printBillPDF(){
+  if(!_pdfBillData)return;
+  const html=buildBillHTML(_pdfBillData,getPrefs());
+  const win=window.open('','_blank');
+  if(!win){toast('Allow pop-ups and try again','e');return;}
+  win.document.write(html);win.document.close();
+  setTimeout(()=>{win.focus();win.print();},600);
+}
+function sharePDFViaWA(){
+  if(!_pdfBillData)return;
+  const b=_pdfBillData;
+  const prefs=getPrefs();
+  const ci=getCompanyInfo();
+  const ph=[ci.phone1,ci.phone2].filter(Boolean);
+  const rem=billRemainingDue(b);
+  const NL='\n';
+  const D='\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501';
+  let m='\uD83D\uDE4F *Jai Bhawani Industries*'+NL;
+  if(ph.length)m+=ph.map(function(p){return '\uD83D\uDCDE '+p;}).join('  \u00B7  ')+NL;
+  m+=D+NL;
+  m+=(b.billType==='in'?'\uD83C\uDFED *In-Company Bill*':'\uD83D\uDE9A *Out-Company Bill*')+NL;
+  m+='\uD83D\uDCC5 '+(b.date||new Date().toLocaleDateString('en-IN'))+NL;
+  if(prefs.showParty&&b.party)m+='\uD83D\uDC64 '+b.party+(prefs.showPhone&&b.partyPhone?' \u00B7 \uD83D\uDCDE'+b.partyPhone:'')+NL;
+  if(b.vehicle&&prefs.showVehicle&&b.vehicle.driver)m+='\uD83D\uDE97 '+b.vehicle.driver+(b.vehicle.phone?' \u00B7 \uD83D\uDCDE'+b.vehicle.phone:'')+(b.vehicle.number?' \u00B7 \uD83D\uDD22'+b.vehicle.number:'')+NL;
+  m+=D+NL;
+  m+='\uD83D\uDCE6 *ITEMS SOLD*'+NL;
+  var sno=1;
+  (b.saleItems||[]).forEach(function(i){if(i.total>0){m+=sno+'. '+i.name+' \u00D7 '+i.qty+' @ \u20B9'+_pn(i.price)+' = *\u20B9'+_pn(i.total)+'*'+NL;sno++;}});
+  m+=NL+'\uD83D\uDCB0 *Items Total: \u20B9'+_pn(b.sT)+'*'+NL;
+  if(prefs.showReplacements&&b.replItems&&b.replItems.length&&b.rT>0){
+    m+=D+NL+'\uD83D\uDD04 *REPLACEMENTS (Deducted)*'+NL;
+    var rno=1;
+    b.replItems.forEach(function(i){if(i.total>0){m+=rno+'. '+i.name+' \u00D7 '+i.qty+' @ \u20B9'+_pn(i.price)+' = \u20B9'+_pn(i.total)+NL;rno++;}});
+    m+='\uD83D\uDD3B *Total Deducted: \u20B9'+_pn(b.rT)+'*'+NL;
+  }
+  if(b.adv>0){
+    var ml=b.payMode==='upi'?'\uD83D\uDCF1 UPI':'\uD83D\uDCB5 Cash';
+    m+=D+NL+'\uD83D\uDCB3 *Advance: \u20B9'+_pn(b.adv)+'* via '+ml+(prefs.showReceiver&&b.upiReceivedBy?' ('+b.upiReceivedBy+')':'')+NL;
+  }
+  if(b.payLog&&b.payLog.length){
+    m+=D+NL+'\uD83D\uDCB0 *PAYMENT HISTORY*'+NL;
+    b.payLog.forEach(function(p){m+='\u2022 '+(p.who||'Unknown')+' \u2014 \u20B9'+_pn(p.amount)+' ('+p.date+')'+NL;});
+  }
+  m+=D+NL;
+  if(rem<0)m+='\uD83D\uDFE2 *Extra to Return: \u20B9'+_pn(Math.abs(rem))+'*'+NL;
+  else if(rem===0)m+='\u2705 *Fully Settled \u2014 No Balance Due*'+NL;
+  else m+='\uD83D\uDD34 *Final to Collect: \u20B9'+_pn(rem)+'*'+NL;
+  m+=D+NL+'_\uD83D\uDE4F Jai Bhawani Industries \u2014 Jai Mata Di_';
+  closeM('m-pdf');
+  window.open('https://wa.me/?text='+encodeURIComponent(m),'_blank');
 }
 
 // ── MODAL ──
@@ -1572,6 +1862,7 @@ function renderBills(){bills=ld(BK);filterBills();}
 refreshHome();
 setBillType('in');
 initPrefs();
+if(typeof loadCompanyInfo==='function')loadCompanyInfo();
 addSale();
 </script>
 </body>

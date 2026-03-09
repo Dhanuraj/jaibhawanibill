@@ -1814,11 +1814,15 @@ function _showPDF(b){
   const html=buildBillHTML(b,prefs);
   const preview=document.getElementById('pdf-preview');
   if(!preview)return;
-  preview.innerHTML='';
-  const iframe=document.createElement('iframe');
-  iframe.style.cssText='width:100%;height:100%;min-height:calc(100vh - 120px);border:none;background:#fff;display:block';
-  preview.appendChild(iframe);
-  iframe.srcdoc=html;
+  // Extract just the <body> content from the bill HTML and inject into a styled div
+  // This keeps it in the same DOM so html2canvas works perfectly
+  const bodyMatch=html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+  const bodyContent=bodyMatch?bodyMatch[1]:html;
+  const styleMatch=html.match(/<style>([\s\S]*?)<\/style>/i);
+  const billStyle=styleMatch?styleMatch[1]:'';
+  preview.innerHTML='<style>'+billStyle+'</style>'
+    +'<div id="pdf-bill-render" style="background:#fff;width:100%;max-width:400px;margin:0 auto;font-family:Segoe UI,Arial,sans-serif">'
+    +bodyContent+'</div>';
   openM('m-pdf');
 }
 function openBillPDF(billId){
@@ -1861,136 +1865,103 @@ function _buildPDFFilename(b){
   return 'JBI-'+id+'-'+name+'.pdf';
 }
 
-// ── Minimal PDF builder (image-based, no library needed) ──
-// Converts a canvas to a valid PDF file blob in ~5ms
+// ── PDF builder: canvas image to valid PDF ──
 function _canvasToPDFBlob(canvas){
-  const imgData=canvas.toDataURL('image/jpeg',0.92);
-  const b64=imgData.split(',')[1];
-  const imgBytes=atob(b64);
-  const imgLen=imgBytes.length;
-
-  // Page dimensions — A4 at 72dpi
-  const PW=595.28, PH=841.89;
-  const cw=canvas.width, ch=canvas.height;
-  // Scale to fit A4 width, allow multi-page height
-  const scale=PW/cw;
-  const imgW=PW, imgH=ch*scale;
-  // Number of A4 pages needed
-  const pages=Math.ceil(imgH/PH);
-
-  let xref=[], offsets=[], pdf='';
-  const e=s=>s; // passthrough
-  let pos=0;
-  const W=(s)=>{offsets.push(pos);pos+=s.length;return s;};
-
+  var jpeg=canvas.toDataURL('image/jpeg',0.88);
+  var raw=atob(jpeg.split(',')[1]);
+  var rawLen=raw.length;
+  var PW=595,PH=842;
+  var imgW=PW;
+  var imgH=Math.round((canvas.height/canvas.width)*imgW);
+  var pages=Math.ceil(imgH/PH);
+  var NL='\n';
+  // Build PDF as string parts (binary image inserted as Uint8Array)
+  var parts=[];
+  var pos=0;
+  var offsets={};
+  function enc(s){var a=new Uint8Array(s.length);for(var i=0;i<s.length;i++)a[i]=s.charCodeAt(i)&0xff;return a;}
+  function p(s){parts.push(enc(s));pos+=s.length;}
   // Header
-  let out='%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';
-  pos=out.length;
-
-  // Image data object (obj 5)
-  const imgObjOff=pos;
-  xref.push(pos);
-  let imgStream='';
-  for(let i=0;i<imgLen;i++)imgStream+=imgBytes[i];
-  const imgStreamLen=imgStream.length;
-  let imgObj='5 0 obj\n<</Type /XObject /Subtype /Image /Width '+cw+' /Height '+ch
-    +' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+imgStreamLen+'>>\nstream\n';
-  out+=imgObj;
-  pos+=imgObj.length;
-  for(let i=0;i<imgLen;i++)out+=imgBytes[i];
-  out+='\nendstream\nendobj\n';
-  pos+=imgStreamLen+'\nendstream\nendobj\n'.length;
-
-  // Build page objects for each A4 slice (obj 4 + pageN)
-  // Resources obj (obj 3)
-  const resOff=pos;
-  xref.push(pos);
-  const resObj='3 0 obj\n<</ProcSet [/PDF /ImageC] /XObject <</Img 5 0 R>>>>\nendobj\n';
-  out+=resObj; pos+=resObj.length;
-
-  // One page per A4 slice
-  const pageObjs=[];
-  const firstPageObjNum=6;
-  for(let p=0;p<pages;p++){
-    const yOff=p*PH; // vertical offset in points into image
-    // Clip region of image for this page
-    const sliceH=Math.min(PH, imgH-yOff);
-    const pageOff=pos;
-    xref.push(pos);
-    // Content stream: draw the image offset so the right slice shows
-    const cm='q '+imgW+' 0 0 '+imgH+' 0 '+(sliceH-imgH+yOff)+' cm /Img Do Q';
-    const cmLen=cm.length;
-    const contentObjNum=firstPageObjNum+p*2+1;
-    const pageObjNum=firstPageObjNum+p*2;
-    // Content object
-    const contentObj=(contentObjNum)+' 0 obj\n<</Length '+cmLen+'>>\nstream\n'+cm+'\nendstream\nendobj\n';
-    // Page object (will write after, need content obj num)
-    const pageObj=(pageObjNum)+' 0 obj\n<</Type /Page /Parent 2 0 R /MediaBox [0 0 '+PW+' '+sliceH
-      +'] /Contents '+(contentObjNum)+' 0 R /Resources 3 0 R>>\nendobj\n';
-    xref.push(pos); out+=pageObj; pos+=pageObj.length;
-    xref.push(pos); out+=contentObj; pos+=contentObj.length;
-    pageObjs.push(pageObjNum+' 0 R');
+  p('%PDF-1.4'+NL);
+  // Obj 1: Catalog
+  offsets[1]=pos;
+  p('1 0 obj'+NL+'<</Type /Catalog /Pages 2 0 R>>'+NL+'endobj'+NL);
+  // Obj 3: Image XObject
+  offsets[3]=pos;
+  p('3 0 obj'+NL+'<</Type /XObject /Subtype /Image /Width '+canvas.width+' /Height '+canvas.height
+    +' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+rawLen+'>>'+NL+'stream'+NL);
+  var imgU8=new Uint8Array(rawLen);
+  for(var i=0;i<rawLen;i++)imgU8[i]=raw.charCodeAt(i)&0xff;
+  parts.push(imgU8);pos+=rawLen;
+  p(NL+'endstream'+NL+'endobj'+NL);
+  // Obj 4: Resources
+  offsets[4]=pos;
+  p('4 0 obj'+NL+'<</ProcSet [/PDF /ImageC] /XObject <</Img 3 0 R>>>>'+NL+'endobj'+NL);
+  // Page content+page objects
+  var pageRefs=[];
+  for(var pg=0;pg<pages;pg++){
+    var contN=5+pg*2;
+    var pageN=6+pg*2;
+    var yStart=pg*PH;
+    var sliceH=Math.min(PH,imgH-yStart);
+    var ty=sliceH-imgH+yStart;
+    var cm='q '+imgW+' 0 0 '+imgH+' 0 '+ty+' cm /Img Do Q';
+    offsets[contN]=pos;
+    p(contN+' 0 obj'+NL+'<</Length '+cm.length+'>>'+NL+'stream'+NL+cm+NL+'endstream'+NL+'endobj'+NL);
+    offsets[pageN]=pos;
+    p(pageN+' 0 obj'+NL+'<</Type /Page /Parent 2 0 R /MediaBox [0 0 '+PW+' '+sliceH
+      +'] /Contents '+contN+' 0 R /Resources 4 0 R>>'+NL+'endobj'+NL);
+    pageRefs.push(pageN);
   }
-
-  // Pages obj (obj 2)
-  const pagesOff=pos;
-  xref[1]=pos;
-  const pagesObj='2 0 obj\n<</Type /Pages /Count '+pages+' /Kids ['+pageObjs.join(' ')+']>>\nendobj\n';
-  out+=pagesObj; pos+=pagesObj.length;
-
-  // Catalog (obj 1)
-  xref[0]=pos;
-  const catObj='1 0 obj\n<</Type /Catalog /Pages 2 0 R>>\nendobj\n';
-  out+=catObj; pos+=catObj.length;
-
-  // xref table
-  const xrefOff=pos;
-  const totalObjs=xref.length+1;
-  let xrefTable='xref\n0 '+totalObjs+'\n0000000000 65535 f \n';
-  // Sort xref by obj number: 1=catalog,2=pages,3=res,4+=pages
-  // Actually we wrote in order: img(5),res(3),pages(6+),pages-obj(2),cat(1)
-  // Rebuild proper xref in obj order
-  // Simple: just output what we tracked
-  xref.forEach(o=>{ xrefTable+=String(o).padStart(10,'0')+' 00000 n \n'; });
-  out+=xrefTable;
-  out+='trailer\n<</Size '+totalObjs+' /Root 1 0 R>>\nstartxref\n'+xrefOff+'\n%%EOF\n';
-
-  // Convert to Uint8Array properly (handle binary)
-  const bytes=new Uint8Array(out.length);
-  for(let i=0;i<out.length;i++)bytes[i]=out.charCodeAt(i)&0xff;
-  return new Blob([bytes],{type:'application/pdf'});
+  // Obj 2: Pages
+  offsets[2]=pos;
+  p('2 0 obj'+NL+'<</Type /Pages /Count '+pages+' /Kids ['
+    +pageRefs.map(function(n){return n+' 0 R';}).join(' ')+'>>>'+NL+'endobj'+NL);
+  // xref
+  var xrefOff=pos;
+  var maxObj=Math.max.apply(null,Object.keys(offsets).map(Number));
+  var xref='xref'+NL+'0 '+(maxObj+1)+NL+'0000000000 65535 f '+NL;
+  for(var oi=1;oi<=maxObj;oi++){
+    xref+=(offsets[oi]!==undefined?String(offsets[oi]).padStart(10,'0'):'0000000000')+' 00000 n '+NL;
+  }
+  p(xref);
+  p('trailer'+NL+'<</Size '+(maxObj+1)+' /Root 1 0 R>>'+NL+'startxref'+NL+xrefOff+NL+'%%EOF'+NL);
+  // Merge all parts
+  var total=0;for(var i=0;i<parts.length;i++)total+=parts[i].length;
+  var out=new Uint8Array(total);var off=0;
+  for(var i=0;i<parts.length;i++){out.set(parts[i],off);off+=parts[i].length;}
+  return new Blob([out],{type:'application/pdf'});
 }
 
-// Render bill into offscreen div, screenshot with html2canvas, convert to PDF
 async function _generateRealPDF(b){
-  const prefs=getPrefs();
-  const html=buildBillHTML(b,prefs);
-
-  // Render into a hidden div (same origin, no iframe CORS issues)
-  const container=document.createElement('div');
-  container.style.cssText='position:fixed;left:-9999px;top:0;width:400px;background:#fff;z-index:-1;pointer-events:none';
-  container.innerHTML='<div id="_pdf_render_target">'+html.replace(/<!DOCTYPE[^>]*>/i,'').replace(/<html[^>]*>/i,'').replace(/<\/html>/i,'').replace(/<head>[\s\S]*<\/head>/i,'').replace(/<body[^>]*>/i,'').replace(/<\/body>/i,'')+'</div>';
-  document.body.appendChild(container);
-
-  // Wait for images/fonts
-  await new Promise(r=>setTimeout(r,200));
-
-  const target=container.querySelector('#_pdf_render_target')||container;
-
-  const canvas=await html2canvas(target,{
-    scale:2,
-    useCORS:true,
-    allowTaint:true,
-    backgroundColor:'#ffffff',
-    logging:false,
-    width:400,
-    scrollX:0,
-    scrollY:0,
-    windowWidth:400
-  });
-
-  document.body.removeChild(container);
-  return _canvasToPDFBlob(canvas);
+  var target=document.getElementById('pdf-bill-render');
+  var tempContainer=null;
+  if(!target){
+    var prefs=getPrefs();
+    var html=buildBillHTML(b,prefs);
+    var bodyMatch=html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+    var bodyContent=bodyMatch?bodyMatch[1]:html;
+    var styleMatch=html.match(/<style>([\s\S]*?)<\/style>/i);
+    var billStyle=styleMatch?styleMatch[1]:'';
+    tempContainer=document.createElement('div');
+    tempContainer.style.cssText='position:fixed;left:-9999px;top:0;width:400px;background:#fff;z-index:-1;pointer-events:none';
+    tempContainer.innerHTML='<style>'+billStyle+'</style><div id="_prt" style="background:#fff;width:400px">'+bodyContent+'</div>';
+    document.body.appendChild(tempContainer);
+    target=tempContainer.querySelector('#_prt');
+    await new Promise(function(r){setTimeout(r,350);});
+  }
+  try{
+    var canvas=await html2canvas(target,{
+      scale:2,useCORS:true,allowTaint:true,backgroundColor:'#ffffff',
+      logging:false,width:400,height:target.scrollHeight,
+      windowWidth:420,scrollX:0,scrollY:0
+    });
+    if(tempContainer)document.body.removeChild(tempContainer);
+    return _canvasToPDFBlob(canvas);
+  }catch(e){
+    if(tempContainer)document.body.removeChild(tempContainer);
+    throw e;
+  }
 }
 
 function _setBtnState(id,loading,defaultTxt){

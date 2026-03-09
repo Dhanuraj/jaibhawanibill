@@ -184,6 +184,11 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
 
 /* ── SAVED BILLS ── */
 .bl-list{padding:8px 12px}
+.bc-body{overflow:hidden;transition:max-height .3s ease,opacity .2s ease}
+.bc-body.collapsed{max-height:0!important;opacity:0;pointer-events:none}
+.bc-body.expanded{opacity:1}
+.bc-toggle-btn{background:none;border:none;cursor:pointer;padding:3px 6px;border-radius:6px;font-size:16px;color:var(--ink3);line-height:1;transition:transform .25s}
+.bc-toggle-btn.open{transform:rotate(180deg)}
 .bc{background:var(--card);border:2px solid var(--bc-border,var(--border));border-radius:16px;margin-bottom:16px;overflow:hidden;box-shadow:var(--sh);animation:su .22s ease}
 .bc-top{padding:13px 16px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px}
 .bc-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);margin-top:5px;flex-shrink:0;box-shadow:0 0 6px var(--abrd)}
@@ -257,8 +262,10 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
 .about-d{font-size:12px;color:var(--ink2);line-height:1.6}
 
 /* ── MODALS/OVERLAYS ── */
-.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s;max-width:430px;left:50%;transform:translateX(-50%)}
+/* overlay backdrop — must cover full screen */
+.ov{position:fixed;inset:0;left:0;right:0;top:0;bottom:0;width:100%;max-width:none;transform:none;background:rgba(0,0,0,.48);z-index:500;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s ease}
 .ov.open{opacity:1;pointer-events:auto}
+/* sheet inside overlay — constrained to app width */
 .sheet{background:var(--card);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:90vh;overflow-y:auto;transform:translateY(40px);transition:transform .26s ease;box-shadow:var(--sh2)}
 .ov.open .sheet{transform:translateY(0)}
 .sh-knob{width:36px;height:4px;border-radius:2px;background:var(--border2);margin:0 auto 16px}
@@ -276,11 +283,13 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
 .fi-arr{color:var(--ink3);font-size:20px;font-weight:700}
 
 /* ── TOAST ── */
-.pdf-modal-inner{background:var(--card);width:100%;max-width:430px;margin:0 auto;display:flex;flex-direction:column;height:100vh;max-height:100vh}
+.pdf-modal-inner{background:var(--card);width:100%;max-width:430px;margin:0 auto;display:flex;flex-direction:column;height:100vh;max-height:100vh;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,1,.28,1)}
+#m-pdf.open .pdf-modal-inner{transform:translateY(0)}
+#m-pdf{align-items:stretch}
 .pdf-modal-header{padding:13px 16px;border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--card)}
 .pdf-modal-body{flex:1;overflow-y:auto;background:#ddd;padding:8px}
 .pdf-modal-footer{padding:12px 14px;display:flex;gap:10px;border-top:1.5px solid var(--border);flex-shrink:0;background:var(--card)}
-#m-pdf{align-items:stretch!important}
+#m-pdf{align-items:flex-end}
 .toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 20px;border-radius:24px;font-size:13px;font-weight:800;opacity:0;transition:all .28s;z-index:999;pointer-events:none;white-space:nowrap;max-width:90%}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast.err{background:var(--red)}
@@ -673,28 +682,8 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
 <!-- TOAST -->
 <div class="toast" id="toast-el"></div>
 
-<!-- BILL TYPE PICKER MODAL -->
-<div class="ov" id="m-billtype">
-  <div class="sheet">
-    <div class="sh-knob"></div>
-    <div class="sh-title">📋 Choose Bill Type</div>
-    <div style="display:flex;flex-direction:column;gap:10px">
-      <div onclick="chooseBillType('in')" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--abg);border:1.5px solid var(--abrd);border-radius:14px;cursor:pointer" ontouchstart="this.style.opacity='.7'" ontouchend="this.style.opacity='1'">
-        <div style="width:48px;height:48px;border-radius:13px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏭</div>
-        <div style="flex:1"><div style="font-weight:800;font-size:15px;color:var(--ink)">In-Company Bill</div><div style="font-size:12px;color:var(--ink3);margin-top:2px">Internal / within company sales</div></div>
-        <div style="color:var(--accent);font-size:20px;font-weight:700">›</div>
-      </div>
-      <div onclick="chooseBillType('out')" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--rbg);border:1.5px solid var(--rbrd);border-radius:14px;cursor:pointer" ontouchstart="this.style.opacity='.7'" ontouchend="this.style.opacity='1'">
-        <div style="width:48px;height:48px;border-radius:13px;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🚚</div>
-        <div style="flex:1"><div style="font-weight:800;font-size:15px;color:var(--ink)">Out-Company Bill</div><div style="font-size:12px;color:var(--ink3);margin-top:2px">External / outside company sales</div></div>
-        <div style="color:var(--red);font-size:20px;font-weight:700">›</div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- PDF PREVIEW MODAL -->
-<div class="ov" id="m-pdf" style="align-items:stretch">
+<div class="ov" id="m-pdf">
   <div class="pdf-modal-inner">
     <div class="pdf-modal-header">
       <button class="btn btn-g btn-xs" onclick="closeM('m-pdf')" style="flex-shrink:0;font-size:18px;padding:6px 11px">‹</button>
@@ -704,7 +693,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
     <div class="pdf-modal-body" id="pdf-preview"></div>
     <div class="pdf-modal-footer">
       <button class="btn btn-a" onclick="printBillPDF()" style="flex:1;justify-content:center;padding:13px;font-size:14px">🖨 Print</button>
-      <button class="btn btn-wa" onclick="sharePDFViaWA()" style="flex:1;justify-content:center;padding:13px;font-size:14px">📲 WhatsApp</button>
+      <button class="btn btn-wa" onclick="sharePDFViaWA()" style="flex:1;justify-content:center;padding:13px;font-size:14px">📲 Share on WA</button>
     </div>
   </div>
 </div>
@@ -713,19 +702,27 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
 <div class="ov" id="m-billtype">
   <div class="sheet">
     <div class="sh-knob"></div>
-    <div style="font-family:'Poppins',sans-serif;font-size:17px;font-weight:800;color:var(--ink);margin-bottom:18px;text-align:center">📋 Choose Bill Type</div>
+    <div style="font-family:'Poppins',sans-serif;font-size:17px;font-weight:800;color:var(--ink);margin-bottom:6px;text-align:center">📋 New Bill</div>
+    <div style="font-size:12px;color:var(--ink3);font-weight:600;text-align:center;margin-bottom:20px">Choose the type of bill to create</div>
     <div style="display:flex;flex-direction:column;gap:12px">
-      <div onclick="chooseBillType('in')" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--abg);border:2px solid var(--abrd);border-radius:14px;cursor:pointer" ontouchstart="this.style.opacity='.7'" ontouchend="this.style.opacity='1'">
-        <div style="width:50px;height:50px;border-radius:13px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">🏭</div>
-        <div style="flex:1"><div style="font-weight:800;font-size:15px;color:var(--ink)">In-Company Bill</div><div style="font-size:12px;color:var(--ink3);margin-top:3px">Internal / within company sales</div></div>
-        <div style="color:var(--accent);font-size:24px;font-weight:700">›</div>
+      <div onclick="chooseBillType('in')" style="display:flex;align-items:center;gap:16px;padding:18px 16px;background:var(--abg);border:2px solid var(--abrd);border-radius:16px;cursor:pointer;transition:all .15s;-webkit-user-select:none;user-select:none" ontouchstart="this.style.transform='scale(.98)';this.style.opacity='.85'" ontouchend="this.style.transform='';this.style.opacity='1'">
+        <div style="width:52px;height:52px;border-radius:14px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,.15)">🏭</div>
+        <div style="flex:1">
+          <div style="font-weight:800;font-size:15px;color:var(--ink);margin-bottom:3px">In-Company Bill</div>
+          <div style="font-size:12px;color:var(--ink3)">Internal / within company sales</div>
+        </div>
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:800;flex-shrink:0">›</div>
       </div>
-      <div onclick="chooseBillType('out')" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--rbg);border:2px solid var(--rbrd);border-radius:14px;cursor:pointer" ontouchstart="this.style.opacity='.7'" ontouchend="this.style.opacity='1'">
-        <div style="width:50px;height:50px;border-radius:13px;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">🚚</div>
-        <div style="flex:1"><div style="font-weight:800;font-size:15px;color:var(--ink)">Out-Company Bill</div><div style="font-size:12px;color:var(--ink3);margin-top:3px">External / outside company sales</div></div>
-        <div style="color:var(--red);font-size:24px;font-weight:700">›</div>
+      <div onclick="chooseBillType('out')" style="display:flex;align-items:center;gap:16px;padding:18px 16px;background:var(--rbg);border:2px solid var(--rbrd);border-radius:16px;cursor:pointer;transition:all .15s;-webkit-user-select:none;user-select:none" ontouchstart="this.style.transform='scale(.98)';this.style.opacity='.85'" ontouchend="this.style.transform='';this.style.opacity='1'">
+        <div style="width:52px;height:52px;border-radius:14px;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,.15)">🚚</div>
+        <div style="flex:1">
+          <div style="font-weight:800;font-size:15px;color:var(--ink);margin-bottom:3px">Out-Company Bill</div>
+          <div style="font-size:12px;color:var(--ink3)">External / outside company sales</div>
+        </div>
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:800;flex-shrink:0">›</div>
       </div>
     </div>
+    <button onclick="closeM('m-billtype')" style="margin-top:16px;width:100%;padding:13px;border:1.5px solid var(--border2);border-radius:12px;background:var(--bg2);color:var(--ink3);font-weight:700;font-size:14px;cursor:pointer;font-family:'Nunito',sans-serif">Cancel</button>
   </div>
 </div>
 
@@ -1383,6 +1380,14 @@ function openSave(){
   document.getElementById('sname').value=document.getElementById('party-name').value||'';
   openM('m-save');setTimeout(()=>document.getElementById('sname')?.focus(),280);
 }
+// ── BILL ID GENERATOR ──
+const SEQ_KEY='jbb_seq';
+function genBillId(){
+  let n=parseInt(localStorage.getItem(SEQ_KEY)||'0')+1;
+  localStorage.setItem(SEQ_KEY,n);
+  return 'JBI-'+String(n).padStart(4,'0');
+}
+
 function doSave(){
   const name=document.getElementById('sname').value.trim();
   if(!name){toast('Enter a bill name','e');return;}
@@ -1401,7 +1406,7 @@ function doSave(){
   })).filter(x=>x.total>0);
   const rcv=getReceiver();
   const bill={
-    id:'b'+Date.now(),billId:'JBI-'+Date.now().toString().slice(-6),
+    id:'b'+Date.now(),billId:genBillId(),
     name,billType,
     party:(document.getElementById('party-name').value||'').trim(),
     partyPhone:(document.getElementById('party-phone').value||'').trim(),
@@ -1483,51 +1488,89 @@ function filterBills(){
   const el=document.getElementById('bills-list');if(!el)return;
   if(!filtered.length){el.innerHTML='<div class="empty"><div class="empty-ico">🔍</div><div class="empty-t">No bills match</div><div class="empty-s">Try changing search or filter</div></div>';return;}
   const prefs=getPrefs();
-  el.innerHTML=filtered.map(b=>`
-    <div class="bc">
-      <div class="bc-top">
-        <div class="bc-dot"></div>
-        <div style="flex:1">
-          <div class="bc-name">${esc(b.name)} <span style="font-size:11px;font-weight:600;color:var(--ink3)">${b.billType==='in'?'🏭 In-Company':'🚚 Out-Company'}</span></div>
-          ${prefs.showParty&&b.party?`<div class="bc-party">👤 ${esc(b.party)}${prefs.showPhone&&b.partyPhone?' · 📞'+esc(b.partyPhone):''}</div>`:''}
-          ${prefs.showVehicle?renderVehicle(b.vehicle):''}
-          <div class="bc-date">${b.date} · ${b.saleItems?.length||0} items</div>
-        </div>
-        <div class="bc-acts" style="align-items:flex-end">
-          <div class="status-badge ${billStatus(b)}" style="margin-bottom:4px">${billStatusIcon(b)} ${billStatusLabel(b)}</div>
-          <div style="display:flex;gap:6px">
-            <button class="btn-wa btn-sm" onclick="shareBillWA('${b.id}')">📲 WA</button>
-            <button class="btn btn-xs" onclick="openBillPDF('${b.id}')" style="background:var(--abg);border:1px solid var(--abrd);color:var(--accent);font-weight:800;padding:5px 9px;border-radius:8px;font-size:11px;cursor:pointer">📄 PDF</button>
-            <button class="btn btn-r btn-xs" onclick="delBill('${b.id}')">🗑</button>
+  el.innerHTML=filtered.map(b=>{
+    const st=billStatus(b);const rem=billRemainingDue(b);
+    const bodyId='bcb-'+b.id;
+    return `
+    <div class="bc" id="bc-${b.id}">
+      <!-- COLLAPSED HEADER — always visible -->
+      <div style="padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer" onclick="toggleBillCard('${b.id}')">
+        <div class="bc-dot" style="flex-shrink:0"></div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span class="bc-name" style="font-size:14px">${esc(b.name)}</span>
+            <span style="font-size:10px;font-weight:800;color:var(--accent);background:var(--abg);border:1px solid var(--abrd);border-radius:8px;padding:1px 7px">${b.billId||'—'}</span>
+          </div>
+          <div style="font-size:11px;color:var(--ink3);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap">
+            <span>${b.billType==='in'?'🏭 In-Co':'🚚 Out-Co'}</span>
+            <span>📅 ${b.date}</span>
+            <span>📦 ${b.saleItems?.length||0} items</span>
+            ${b.party&&prefs.showParty?`<span>👤 ${esc(b.party)}</span>`:''}
           </div>
         </div>
-      </div>
-      ${b.saleItems?.length?`<table class="bc-tbl"><thead><tr><th>#</th><th>Item</th><th>₹/pc</th><th>Qty</th><th>Total</th></tr></thead><tbody>${b.saleItems.map((i,idx)=>`<tr><td style="color:var(--ink3);font-weight:800;font-size:11px">${idx+1}</td><td style="color:var(--ink);font-weight:700">${esc(i.name||'—')}</td><td>${INR(i.price)}</td><td>${i.qty}</td><td>${INR(i.total)}</td></tr>`).join('')}<tr style="background:var(--abg)"><td colspan="4" style="font-size:11px;text-transform:uppercase;font-weight:800;color:var(--ink3)">To Collect</td><td style="font-family:'Poppins',sans-serif;font-size:16px;font-weight:800;color:var(--accent)">${INR(b.sT)}</td></tr></tbody></table>`:''}
-      ${prefs.showReplacements&&b.replItems?.length&&b.rT>0?`<div class="bc-sec-lbl r">🔄 Replacements Deducted</div><table class="bc-tbl"><tbody>${b.replItems.map(i=>`<tr class="repl"><td colspan="2" style="color:var(--ink);font-weight:700">${esc(i.name||'—')}</td><td>${INR(i.price)}</td><td>${i.qty}</td><td style="color:var(--red)">${INR(i.total)}</td></tr>`).join('')}<tr style="background:var(--rbg)"><td colspan="4" style="font-size:11px;text-transform:uppercase;font-weight:800;color:var(--red)">Deducted</td><td style="font-family:'Poppins',sans-serif;font-size:16px;font-weight:800;color:var(--red)">${INR(b.rT)}</td></tr></tbody></table>`:''}
-      <div class="bc-foot">
-        <div style="flex:1">
-          ${b.adv>0?`<div class="bcf-adv">💳 ${INR(b.adv)} · ${b.payMode==='upi'?'📱 UPI':'💵 Cash'}${prefs.showReceiver&&b.upiReceivedBy?' ('+esc(b.upiReceivedBy)+')':''}</div>`:''}
-          ${b.rT>0?`<div class="bcf-repl">🔄 Replaced: ${INR(b.rT)}</div>`:''}
-          <div class="bcf-lbl" style="margin-top:4px">${bcFootLabel(b)}</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
+          <div class="status-badge ${st}">${billStatusIcon(b)} ${billStatusLabel(b)}</div>
+          <div style="font-family:'Poppins',sans-serif;font-size:14px;font-weight:800;color:${st==='due'?'var(--red)':st==='paid'?'#2e7d52':'var(--ink)'}">${bcFootVal(b)}</div>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
-          <div class="${bcFootValClass(b)}">${bcFootVal(b)}</div>
-          <div class="status-badge ${billStatus(b)}">${billStatusIcon(b)} ${billStatusLabel(b)}</div>
-        </div>
+        <button class="bc-toggle-btn" id="bctb-${b.id}" onclick="event.stopPropagation();toggleBillCard('${b.id}')" title="Expand/Collapse">▼</button>
       </div>
-      ${b.billType==='in'?billStatus(b)==='due'?`
-      <div style="padding:10px 14px;background:var(--bg2);border-top:1px solid var(--border)">
-        <button class="btn-prcv" onclick="openPaymentReceived('${b.id}')">💰 Payment Received</button>
-      </div>`:billStatus(b)==='paid'?`
-      <div style="padding:9px 14px;background:rgba(46,125,82,.07);border-top:1px solid rgba(46,125,82,.2);display:flex;align-items:center;gap:6px">
-        <span>✅</span><span style="font-size:12px;font-weight:800;color:#2e7d52">Payment Complete — No Balance Due</span>
-      </div>`:'':''}
-      ${b.payLog&&b.payLog.length?`
-      <div class="pay-log">
-        <div style="padding:6px 14px 3px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3)">Payment History</div>
-        ${b.payLog.map(p=>`<div class="pay-log-row"><div><div class="pay-log-who">👤 ${esc(p.who||'Unknown')}${prefs.showPhone&&p.phone?' · 📞'+esc(p.phone):''}</div><div style="font-size:10px;color:var(--ink3)">${p.date}</div></div><div style="text-align:right"><div class="pay-log-amt">+${INR(p.amount)}</div>${p.note?`<div style="font-size:10px;color:var(--ink3)">${esc(p.note)}</div>`:''}</div></div>`).join('')}
-      </div>`:''}
-    </div>`).join('');
+      <!-- EXPANDED BODY — toggleable -->
+      <div class="bc-body collapsed" id="${bodyId}" style="max-height:0">
+        <!-- action buttons row -->
+        <div style="padding:6px 14px 10px;display:flex;gap:7px;flex-wrap:wrap;border-top:1px solid var(--border)">
+          <button class="btn-wa btn-sm" onclick="shareBillWA('${b.id}')">📲 WA</button>
+          <button class="btn btn-xs" onclick="openBillPDF('${b.id}')" style="background:var(--abg);border:1px solid var(--abrd);color:var(--accent);font-weight:800;padding:5px 10px;border-radius:8px;font-size:11px;cursor:pointer">📄 PDF</button>
+          <button class="btn btn-r btn-xs" onclick="delBill('${b.id}')">🗑</button>
+        </div>
+        <!-- items table -->
+        ${b.saleItems?.length?`<table class="bc-tbl"><thead><tr><th>#</th><th>Item</th><th>₹/pc</th><th>Qty</th><th>Total</th></tr></thead><tbody>${b.saleItems.map((i,idx)=>`<tr><td style="color:var(--ink3);font-weight:800;font-size:11px">${idx+1}</td><td style="color:var(--ink);font-weight:700">${esc(i.name||'—')}</td><td>${INR(i.price)}</td><td>${i.qty}</td><td>${INR(i.total)}</td></tr>`).join('')}<tr style="background:var(--abg)"><td colspan="4" style="font-size:11px;text-transform:uppercase;font-weight:800;color:var(--ink3)">To Collect</td><td style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:800;color:var(--accent)">${INR(b.sT)}</td></tr></tbody></table>`:''}
+        ${prefs.showReplacements&&b.replItems?.length&&b.rT>0?`<div class="bc-sec-lbl r">🔄 Replacements Deducted</div><table class="bc-tbl"><tbody>${b.replItems.map(i=>`<tr class="repl"><td colspan="2" style="color:var(--ink);font-weight:700">${esc(i.name||'—')}</td><td>${INR(i.price)}</td><td>${i.qty}</td><td style="color:var(--red)">${INR(i.total)}</td></tr>`).join('')}<tr style="background:var(--rbg)"><td colspan="4" style="font-size:11px;text-transform:uppercase;font-weight:800;color:var(--red)">Deducted</td><td style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:800;color:var(--red)">${INR(b.rT)}</td></tr></tbody></table>`:''}
+        <div class="bc-foot">
+          <div style="flex:1">
+            ${b.adv>0?`<div class="bcf-adv">💳 ${INR(b.adv)} · ${b.payMode==='upi'?'📱 UPI':'💵 Cash'}${prefs.showReceiver&&b.upiReceivedBy?' ('+esc(b.upiReceivedBy)+')':''}</div>`:''}
+            ${b.rT>0?`<div class="bcf-repl">🔄 Replaced: ${INR(b.rT)}</div>`:''}
+            <div class="bcf-lbl" style="margin-top:4px">${bcFootLabel(b)}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+            <div class="${bcFootValClass(b)}">${bcFootVal(b)}</div>
+            <div class="status-badge ${st}">${billStatusIcon(b)} ${billStatusLabel(b)}</div>
+          </div>
+        </div>
+        ${b.billType==='in'?st==='due'?`
+        <div style="padding:10px 14px;background:var(--bg2);border-top:1px solid var(--border)">
+          <button class="btn-prcv" onclick="openPaymentReceived('${b.id}')">💰 Payment Received</button>
+        </div>`:st==='paid'?`
+        <div style="padding:9px 14px;background:rgba(46,125,82,.07);border-top:1px solid rgba(46,125,82,.2);display:flex;align-items:center;gap:6px">
+          <span>✅</span><span style="font-size:12px;font-weight:800;color:#2e7d52">Payment Complete — No Balance Due</span>
+        </div>`:'':''}
+        ${b.payLog&&b.payLog.length?`
+        <div class="pay-log">
+          <div style="padding:6px 14px 3px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3)">Payment History</div>
+          ${b.payLog.map(p=>`<div class="pay-log-row"><div><div class="pay-log-who">👤 ${esc(p.who||'Unknown')}${prefs.showPhone&&p.phone?' · 📞'+esc(p.phone):''}</div><div style="font-size:10px;color:var(--ink3)">${p.date}</div></div><div style="text-align:right"><div class="pay-log-amt">+${INR(p.amount)}</div>${p.note?`<div style="font-size:10px;color:var(--ink3)">${esc(p.note)}</div>`:''}</div></div>`).join('')}
+        </div>`:''}
+      </div>
+    </div>`}).join('');
+}
+
+// ── BILL CARD TOGGLE ──
+const _openCards=new Set();
+function toggleBillCard(billId){
+  const body=document.getElementById('bcb-'+billId);
+  const btn=document.getElementById('bctb-'+billId);
+  if(!body)return;
+  const isOpen=_openCards.has(billId);
+  if(isOpen){
+    body.style.maxHeight=body.scrollHeight+'px';
+    requestAnimationFrame(()=>{body.style.maxHeight='0';body.classList.add('collapsed');body.classList.remove('expanded');});
+    if(btn)btn.classList.remove('open');
+    _openCards.delete(billId);
+  } else {
+    body.classList.remove('collapsed');body.classList.add('expanded');
+    body.style.maxHeight=body.scrollHeight+'px';
+    setTimeout(()=>{if(_openCards.has(billId))body.style.maxHeight='none';},320);
+    if(btn)btn.classList.add('open');
+    _openCards.add(billId);
+  }
 }
 
 // ── PAYMENT RECEIVED ──
@@ -1620,6 +1663,7 @@ function shareCurrentBillWA(){
   const prefs=getPrefs();
   let msg='🙏 *Jai Bhawani Industries*\n';
   msg+=(billType==='in'?'🏭 In-Company Bill':'🚚 Out-Company Bill')+'\n';
+  msg+='🆔 Bill No: *Draft*\n';
   if(prefs.showParty&&party)msg+=`👤 ${party}${prefs.showPhone&&partyPhone?' · 📞'+partyPhone:''}\n`;
   if(vehicleOn&&prefs.showVehicle){const d=document.getElementById('veh-driver').value,p=document.getElementById('veh-phone').value,n=document.getElementById('veh-number').value;if(d)msg+=`🚗 ${d}${p?' (📞'+p+')':''}${n?' · 🔢'+n:''}\n`;}
   msg+=`📅 ${new Date().toLocaleDateString('en-IN')}\n\n`;
@@ -1737,6 +1781,7 @@ function buildBillHTML(b,prefs){
   +'<div class="mi"><div class="ml">Bill Name</div><div class="mv">'+(b.name||'\u2014')+'</div></div>'
   +'<div class="mi"><div class="ml">Type</div><div class="mv">'+(b.billType==='in'?'\uD83C\uDFED In-Company':'\uD83D\uDE9A Out-Company')+'</div></div>'
   +'<div class="mi"><div class="ml">Date</div><div class="mv">'+(b.date||'\u2014')+'</div></div>'
+  +(b.billId?'<div class="mi"><div class="ml">Bill No.</div><div class="mv" style="font-size:13px;font-weight:800;color:#e8722a">'+b.billId+'</div></div>':'')
   +'<div class="mi"><div class="ml">Status</div><div class="mv"><span class="chip '+statusCls+'">'+statusIco+' '+statusLbl+'</span></div></div>'
   +'</div>'
   +(prefs.showParty&&b.party?'<div class="sec" style="padding-bottom:6px"><div style="font-size:13px;font-weight:700">\uD83D\uDC64 '+b.party+(prefs.showPhone&&b.partyPhone?' &nbsp;\u00B7\u00B7 \uD83D\uDCDE '+b.partyPhone:'')+'</div>'+(b.vehicle&&prefs.showVehicle&&(b.vehicle.driver||b.vehicle.number)?'<div style="font-size:11px;color:#6b6560;margin-top:4px">'+(b.vehicle.driver?'\uD83D\uDE97 '+b.vehicle.driver:'')+(b.vehicle.phone?' \u00B7 \uD83D\uDCDE '+b.vehicle.phone:'')+(b.vehicle.number?' \u00B7 \uD83D\uDD22 '+b.vehicle.number:'')+'</div>':'')+(b.vehicle&&b.vehicle.photo?'<img src="'+b.vehicle.photo+'" style="width:100%;max-height:90px;object-fit:cover;border-radius:7px;margin-top:8px;border:1px solid #e8e3d9"/>':'')+'</div>':'')
@@ -1818,6 +1863,7 @@ function sharePDFViaWA(){
   if(ph.length)m+=ph.map(function(p){return '\uD83D\uDCDE '+p;}).join('  \u00B7  ')+NL;
   m+=D+NL;
   m+=(b.billType==='in'?'\uD83C\uDFED *In-Company Bill*':'\uD83D\uDE9A *Out-Company Bill*')+NL;
+  if(b.billId)m+='\uD83C\uDD94 *Bill No: '+b.billId+'*'+NL;
   m+='\uD83D\uDCC5 '+(b.date||new Date().toLocaleDateString('en-IN'))+NL;
   if(prefs.showParty&&b.party)m+='\uD83D\uDC64 '+b.party+(prefs.showPhone&&b.partyPhone?' \u00B7 \uD83D\uDCDE'+b.partyPhone:'')+NL;
   if(b.vehicle&&prefs.showVehicle&&b.vehicle.driver)m+='\uD83D\uDE97 '+b.vehicle.driver+(b.vehicle.phone?' \u00B7 \uD83D\uDCDE'+b.vehicle.phone:'')+(b.vehicle.number?' \u00B7 \uD83D\uDD22'+b.vehicle.number:'')+NL;

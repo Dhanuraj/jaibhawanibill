@@ -1728,86 +1728,218 @@ function delBill(id){
 let _pdfBillData=null;
 function _pn(n){return Number(n).toLocaleString('en-IN');}
 function buildBillHTML(b,prefs){
-  const ci=getCompanyInfo();
-  const ph=[ci.phone1,ci.phone2].filter(Boolean);
-  const rem=billRemainingDue(b);
-  const statusCls=billStatus(b);
-  const statusLbl=billStatusLabel(b);
-  const statusIco=billStatusIcon(b);
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>'
-  +'<style>'
-  +'*{box-sizing:border-box;margin:0;padding:0}'
-  +'body{font-family:\'Segoe UI\',Arial,sans-serif;color:#1e1c18;background:#fff;max-width:600px;margin:0 auto}'
-  +'.hdr{background:linear-gradient(135deg,#c45e1a,#e8722a,#f5a366);color:#fff;padding:22px 20px 18px;text-align:center;position:relative;overflow:hidden}'
-  +'.hdr::before{content:"";position:absolute;top:-30px;right:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.1)}'
-  +'.hdr-co{font-size:22px;font-weight:800;position:relative}'
-  +'.hdr-tag{font-size:11px;opacity:.8;margin-top:4px;position:relative}'
-  +'.hdr-ph{font-size:13px;font-weight:700;margin-top:10px;opacity:.92;position:relative}'
-  +'.meta{display:flex;flex-wrap:wrap;gap:0;background:#f9f6f2;border-bottom:1.5px solid #e8e3d9}'
-  +'.mi{padding:10px 14px;flex:1;min-width:120px}'
-  +'.ml{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#a09a92;margin-bottom:3px}'
-  +'.mv{font-weight:700;color:#1e1c18;font-size:12px}'
-  +'.chip{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:800;text-transform:uppercase}'
-  +'.chip.paid{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7}'
-  +'.chip.due{background:#ffebee;color:#c62828;border:1px solid #ef9a9a}'
-  +'.chip.pending{background:#fff8e1;color:#f57f17;border:1px solid #ffe082}'
-  +'.sec{padding:12px 16px}'
-  +'.sec-t{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#a09a92;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid #f0ede6}'
-  +'.sec-t.red{color:#e53935;border-color:#fdd}'
-  +'table{width:100%;border-collapse:collapse;font-size:12px}'
-  +'th{background:#f3f0ea;padding:7px 6px;font-size:9px;text-transform:uppercase;font-weight:800;color:#6b6560;letter-spacing:.5px;border-bottom:1.5px solid #e8e3d9}'
-  +'th:first-child{text-align:center;width:26px}'
-  +'th:nth-child(n+2){text-align:left}'
-  +'th:last-child,th:nth-child(4),th:nth-child(5){text-align:right}'
-  +'td{padding:8px 6px;border-bottom:1px solid #f5f2ee;vertical-align:middle}'
-  +'td:first-child{text-align:center;color:#bbb;font-size:10px;font-weight:700}'
-  +'td:nth-child(3),td:nth-child(4),td:nth-child(5){text-align:right;font-weight:700}'
-  +'.tr-total td{background:#fff8f4;color:#e8722a;font-weight:800;border-top:2px solid #e8e3d9;padding:9px 6px}'
-  +'.tr-repl td{color:#e53935}'
-  +'.tr-rtotal td{background:#fff5f5;color:#e53935;font-weight:800;border-top:2px solid #ffd5d5;padding:9px 6px}'
-  +'.sumbox{margin:8px 16px;border:1.5px solid #e8e3d9;border-radius:10px;overflow:hidden}'
-  +'.sr{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #f0ede6;font-size:12px}'
-  +'.sr:last-child{border-bottom:none}'
-  +'.sr.big{background:#fff8f4;padding:12px 14px;font-weight:800;font-size:15px;color:#e8722a}'
-  +'.sr.green{color:#2e7d32}.sr.red{color:#e53935}.sr.orange{color:#f57f17}'
-  +'.ph-row{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid #f0ede6;font-size:11px}'
-  +'.ph-row:last-child{border-bottom:none}'
-  +'.foot{background:#f3f0ea;padding:14px 16px;text-align:center;font-size:10px;color:#a09a92;margin-top:8px;border-top:1.5px solid #e8e3d9}'
-  +'.foot strong{color:#e8722a}'
-  +'@media print{.hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact}.sumbox .sr.big{-webkit-print-color-adjust:exact;print-color-adjust:exact}}'
-  +'</style></head><body>'
-  +'<div class="hdr">'
-  +'<div class="hdr-co">\uD83D\uDE4F Jai Bhawani Industries</div>'
-  +'<div class="hdr-tag">Jai Mata Di \uD83D\uDE4F</div>'
-  +(ph.length?'<div class="hdr-ph">'+ph.map(p=>'\uD83D\uDCDE '+p).join('&nbsp;&nbsp;\u00B7&nbsp;&nbsp;')+'</div>':'')
-  +'</div>'
-  +'<div class="meta">'
-  +'<div class="mi"><div class="ml">Bill Name</div><div class="mv">'+(b.name||'\u2014')+'</div></div>'
-  +'<div class="mi"><div class="ml">Type</div><div class="mv">'+(b.billType==='in'?'\uD83C\uDFED In-Company':'\uD83D\uDE9A Out-Company')+'</div></div>'
-  +'<div class="mi"><div class="ml">Date</div><div class="mv">'+(b.date||'\u2014')+'</div></div>'
-  +(b.billId?'<div class="mi"><div class="ml">Bill No.</div><div class="mv" style="font-size:13px;font-weight:800;color:#e8722a">'+b.billId+'</div></div>':'')
-  +'<div class="mi"><div class="ml">Status</div><div class="mv"><span class="chip '+statusCls+'">'+statusIco+' '+statusLbl+'</span></div></div>'
-  +'</div>'
-  +(prefs.showParty&&b.party?'<div class="sec" style="padding-bottom:6px"><div style="font-size:13px;font-weight:700">\uD83D\uDC64 '+b.party+(prefs.showPhone&&b.partyPhone?' &nbsp;\u00B7\u00B7 \uD83D\uDCDE '+b.partyPhone:'')+'</div>'+(b.vehicle&&prefs.showVehicle&&(b.vehicle.driver||b.vehicle.number)?'<div style="font-size:11px;color:#6b6560;margin-top:4px">'+(b.vehicle.driver?'\uD83D\uDE97 '+b.vehicle.driver:'')+(b.vehicle.phone?' \u00B7 \uD83D\uDCDE '+b.vehicle.phone:'')+(b.vehicle.number?' \u00B7 \uD83D\uDD22 '+b.vehicle.number:'')+'</div>':'')+(b.vehicle&&b.vehicle.photo?'<img src="'+b.vehicle.photo+'" style="width:100%;max-height:90px;object-fit:cover;border-radius:7px;margin-top:8px;border:1px solid #e8e3d9"/>':'')+'</div>':'')
-  +(b.saleItems&&b.saleItems.length?'<div class="sec"><div class="sec-t">\uD83D\uDCE6 Items Sold</div><table><thead><tr><th>#</th><th>Item</th><th style="text-align:right">\u20B9/pc</th><th style="text-align:right">Qty</th><th style="text-align:right">Total</th></tr></thead><tbody>'
-  +b.saleItems.map((i,idx)=>i.total>0?'<tr><td>'+(idx+1)+'</td><td>'+i.name+'</td><td>\u20B9'+_pn(i.price)+'</td><td>'+i.qty+'</td><td>\u20B9'+_pn(i.total)+'</td></tr>':'').join('')
-  +'<tr class="tr-total"><td colspan="4">Items Total</td><td>\u20B9'+_pn(b.sT)+'</td></tr></tbody></table></div>':'')
-  +(prefs.showReplacements&&b.replItems&&b.replItems.length&&b.rT>0?'<div class="sec"><div class="sec-t red">\uD83D\uDD04 Replacements Deducted</div><table><thead><tr><th>#</th><th>Item</th><th style="text-align:right">\u20B9/pc</th><th style="text-align:right">Qty</th><th style="text-align:right">Deducted</th></tr></thead><tbody>'
-  +b.replItems.map((i,idx)=>i.total>0?'<tr class="tr-repl"><td>'+(idx+1)+'</td><td>'+i.name+'</td><td>\u20B9'+_pn(i.price)+'</td><td>'+i.qty+'</td><td>\u2212\u20B9'+_pn(i.total)+'</td></tr>':'').join('')
-  +'<tr class="tr-rtotal"><td colspan="4">Total Deducted</td><td>\u2212\u20B9'+_pn(b.rT)+'</td></tr></tbody></table></div>':'')
-  +'<div class="sumbox">'
-  +(b.sT>0?'<div class="sr"><span>Items Total</span><span>\u20B9'+_pn(b.sT)+'</span></div>':'')
-  +(b.rT>0?'<div class="sr red"><span>\u2212 Replacements</span><span>\u2212\u20B9'+_pn(b.rT)+'</span></div>':'')
-  +(b.adv>0?'<div class="sr orange"><span>\u2212 Advance ('+(b.payMode==='upi'?'UPI':'Cash')+(prefs.showReceiver&&b.upiReceivedBy?' \u00B7 '+b.upiReceivedBy:'')+')</span><span>\u2212\u20B9'+_pn(b.adv)+'</span></div>':'')
-  +((b.payLog||[]).reduce((s,p)=>s+(parseFloat(p.amount)||0),0)>0?'<div class="sr green"><span>\u2212 Payments Received</span><span>\u2212\u20B9'+_pn((b.payLog||[]).reduce((s,p)=>s+(parseFloat(p.amount)||0),0))+'</span></div>':'')
-  +'<div class="sr big"><span>'+(rem<0?'Extra to Return':rem===0?'\u2705 Fully Settled':'Amount to Collect')+'</span><span>'+(rem<0?'Extra \u20B9'+_pn(Math.abs(rem)):'\u20B9'+_pn(Math.max(0,rem)))+'</span></div>'
-  +'</div>'
-  +(b.payLog&&b.payLog.length?'<div class="sec"><div class="sec-t">\uD83D\uDCB0 Payment History</div>'
-  +b.payLog.map(p=>'<div class="ph-row"><div><strong>'+(p.who||'Unknown')+'</strong>'+(p.phone?' \u00B7 \uD83D\uDCDE '+p.phone:'')+'<div style="font-size:9px;color:#a09a92;margin-top:2px">'+p.date+'</div></div><div style="color:#2e7d32;font-weight:800">+\u20B9'+_pn(p.amount)+'</div></div>').join('')
-  +'</div>':'')
-  +'<div class="foot"><strong>Jai Bhawani Industries</strong> \u2014 Jai Mata Di \uD83D\uDE4F<br/>'+(ph.length?ph.join(' &nbsp;\u00B7&nbsp; ')+'<br/>':'')+'<span style="font-size:9px">Generated via Jai Bhawani Bills App</span></div>'
-  +'</body></html>';
+  var ci=getCompanyInfo();
+  var ph=[ci.phone1,ci.phone2].filter(Boolean);
+  var rem=billRemainingDue(b);
+  var st=billStatus(b);
+  var stLbl=st==='paid'?'PAID':st==='due'?'DUE':'PENDING';
+  var stClr=st==='paid'?'#1b7a3e':st==='due'?'#c62828':'#b45309';
+  var stBg=st==='paid'?'#e8f5e9':st==='due'?'#ffebee':'#fef3c7';
+  var stBdr=st==='paid'?'#a5d6a7':st==='due'?'#ef9a9a':'#fcd34d';
+  var paidTotal=(b.payLog||[]).reduce(function(s,p){return s+(parseFloat(p.amount)||0);},0);
+
+  // Helper: number rows (only items with total>0)
+  function saleRows(){
+    var rows=[];var n=1;
+    (b.saleItems||[]).forEach(function(i){if(i.total>0)rows.push([n++,i.name,i.price,i.qty,i.total]);});
+    return rows;
+  }
+  function replRows(){
+    var rows=[];var n=1;
+    (b.replItems||[]).forEach(function(i){if(i.total>0)rows.push([n++,i.name,i.price,i.qty,i.total]);});
+    return rows;
+  }
+  var sr=saleRows();var rr=replRows();
+
+  // CSS — A4 page width 794px at 96dpi. We design at 700px for margins.
+  // Everything sized to fit one A4 page (1123px tall at 96dpi).
+  var css=[
+    '*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    'body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#1a1a1a;background:#fff;',
+         'width:794px;min-height:1123px;padding:32px 36px;line-height:1.4}',
+    // Header
+    '.hdr{background:linear-gradient(135deg,#b35318 0%,#e0671e 55%,#f09040 100%);',
+         'color:#fff;padding:18px 22px 14px;border-radius:6px;margin-bottom:14px;',
+         'display:flex;justify-content:space-between;align-items:flex-start}',
+    '.hdr-left{}',
+    '.hdr-co{font-size:18px;font-weight:700;letter-spacing:-.2px;margin-bottom:2px}',
+    '.hdr-tag{font-size:9px;opacity:.8;letter-spacing:.5px;text-transform:uppercase}',
+    '.hdr-ph{font-size:9.5px;margin-top:7px;opacity:.9}',
+    '.hdr-right{text-align:right}',
+    '.hdr-inv{font-size:10px;opacity:.75;text-transform:uppercase;letter-spacing:.8px}',
+    '.hdr-billid{font-size:16px;font-weight:700;letter-spacing:.5px;margin-top:2px}',
+    '.hdr-status{display:inline-block;margin-top:5px;padding:2px 9px;border-radius:3px;',
+                'font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:rgba(255,255,255,.25)}',
+    // Meta row
+    '.meta{display:flex;gap:0;border:1px solid #e0ddd8;border-radius:4px;overflow:hidden;margin-bottom:12px}',
+    '.mi{flex:1;padding:7px 12px;border-right:1px solid #e0ddd8;background:#faf9f6}',
+    '.mi:last-child{border-right:none}',
+    '.ml{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#999;margin-bottom:2px}',
+    '.mv{font-size:10.5px;font-weight:600;color:#222}',
+    // Party / vehicle
+    '.party-row{background:#f7f6f3;border:1px solid #e8e4dc;border-radius:4px;padding:8px 12px;margin-bottom:10px;display:flex;gap:24px}',
+    '.pr-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#999;margin-bottom:2px}',
+    '.pr-val{font-size:10.5px;font-weight:600;color:#222}',
+    // Section heading
+    '.sec-h{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;',
+            'color:#888;border-bottom:1.5px solid #e8e4dc;padding-bottom:4px;margin-bottom:0}',
+    '.sec-h.red{color:#c62828;border-color:#f5c6c6}',
+    // Tables
+    'table{width:100%;border-collapse:collapse;margin-bottom:10px}',
+    'th{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;',
+        'color:#888;padding:6px 8px;background:#f7f6f3;border-bottom:1.5px solid #e0ddd8;text-align:left}',
+    'th.r{text-align:right}',
+    'td{font-size:10px;padding:5px 8px;border-bottom:1px solid #f0ede8;color:#2a2a2a;vertical-align:middle}',
+    'td.r{text-align:right;font-weight:600}',
+    'td.c{text-align:center;color:#bbb;font-size:9px}',
+    'td.name{font-weight:500}',
+    '.tr-sub td{background:#fff8f4;font-size:10px;font-weight:700;color:#c45e1a}',
+    '.tr-rsub td{background:#fff4f4;font-size:10px;font-weight:700;color:#c62828}',
+    // Summary box
+    '.sum{border:1px solid #e0ddd8;border-radius:4px;overflow:hidden;margin-bottom:10px;width:55%;margin-left:auto}',
+    '.sum-row{display:flex;justify-content:space-between;padding:5px 10px;border-bottom:1px solid #f0ede8;font-size:10px}',
+    '.sum-row:last-child{border-bottom:none}',
+    '.sum-row.red{color:#c62828}',
+    '.sum-row.org{color:#c45e1a}',
+    '.sum-row.grn{color:#1b7a3e}',
+    '.sum-final{display:flex;justify-content:space-between;padding:8px 10px;',
+               'background:#e0671e;color:#fff;font-size:11px;font-weight:700}',
+    '.sum-final.settled{background:#1b7a3e}',
+    '.sum-final.extra{background:#1565c0}',
+    // Payment history
+    '.ph{border:1px solid #e0ddd8;border-radius:4px;overflow:hidden;margin-bottom:10px}',
+    '.ph-row{display:flex;justify-content:space-between;align-items:center;padding:5px 10px;border-bottom:1px solid #f0ede8;font-size:9.5px}',
+    '.ph-row:last-child{border-bottom:none}',
+    '.ph-who{font-weight:600;color:#222}',
+    '.ph-dt{font-size:8.5px;color:#aaa;margin-top:1px}',
+    '.ph-amt{font-weight:700;color:#1b7a3e}',
+    // Footer
+    '.foot{margin-top:auto;padding-top:12px;border-top:1px solid #e0ddd8;',
+           'display:flex;justify-content:space-between;align-items:center}',
+    '.foot-left{font-size:8.5px;color:#aaa}',
+    '.foot-left strong{color:#e0671e}',
+    '.foot-right{font-size:8px;color:#bbb}',
+    '@media print{body{padding:24px 28px}',
+                  '.hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+                  '.sum-final{-webkit-print-color-adjust:exact;print-color-adjust:exact}}'
+  ].join('');
+
+  var H='<!DOCTYPE html><html><head><meta charset="UTF-8"/>'
+    +'<style>'+css+'</style></head><body>';
+
+  // ── HEADER ──
+  H+='<div class="hdr">';
+  H+='<div class="hdr-left">';
+  H+='<div class="hdr-co">Jai Bhawani Industries</div>';
+  H+='<div class="hdr-tag">Jai Mata Di  |  '+( b.billType==='in'?'Internal Bill':'External Bill' )+'</div>';
+  if(ph.length)H+='<div class="hdr-ph">'+ph.join('  |  ')+'</div>';
+  H+='</div>';
+  H+='<div class="hdr-right">';
+  H+='<div class="hdr-inv">Invoice</div>';
+  H+='<div class="hdr-billid">'+(b.billId||b.id||'—')+'</div>';
+  H+='<div class="hdr-status">'+stLbl+'</div>';
+  H+='</div>';
+  H+='</div>';
+
+  // ── META ROW ──
+  H+='<div class="meta">';
+  H+='<div class="mi"><div class="ml">Bill Name</div><div class="mv">'+(b.name||'—')+'</div></div>';
+  H+='<div class="mi"><div class="ml">Date</div><div class="mv">'+(b.date||'—')+'</div></div>';
+  H+='<div class="mi"><div class="ml">Type</div><div class="mv">'+(b.billType==='in'?'In-Company':'Out-Company')+'</div></div>';
+  H+='<div class="mi"><div class="ml">Status</div><div class="mv" style="font-weight:700;color:'+stClr+'">'+stLbl+'</div></div>';
+  H+='</div>';
+
+  // ── PARTY / VEHICLE ROW ──
+  var showParty=prefs.showParty&&b.party;
+  var showVeh=prefs.showVehicle&&b.vehicle&&(b.vehicle.driver||b.vehicle.number);
+  if(showParty||showVeh){
+    H+='<div class="party-row">';
+    if(showParty){
+      H+='<div><div class="pr-label">Party / Customer</div>';
+      H+='<div class="pr-val">'+b.party+(prefs.showPhone&&b.partyPhone?' &nbsp;|&nbsp; '+b.partyPhone:'')+'</div></div>';
+    }
+    if(showVeh){
+      var v=b.vehicle;
+      H+='<div><div class="pr-label">Vehicle / Driver</div>';
+      H+='<div class="pr-val">'+(v.driver||'')+(v.number?' | '+v.number:'')+(v.phone?' | '+v.phone:'')+'</div></div>';
+    }
+    H+='</div>';
+  }
+
+  // ── ITEMS SOLD TABLE ──
+  if(sr.length){
+    H+='<div class="sec-h">Items Sold</div>';
+    H+='<table><thead><tr>';
+    H+='<th style="width:28px">#</th><th>Item Description</th>';
+    H+='<th class="r" style="width:70px">Rate</th>';
+    H+='<th class="r" style="width:50px">Qty</th>';
+    H+='<th class="r" style="width:80px">Amount</th></tr></thead><tbody>';
+    sr.forEach(function(row){
+      H+='<tr><td class="c">'+row[0]+'</td><td class="name">'+row[1]+'</td>';
+      H+='<td class="r">Rs.'+_pn(row[2])+'</td><td class="r">'+row[3]+'</td>';
+      H+='<td class="r">Rs.'+_pn(row[4])+'</td></tr>';
+    });
+    H+='<tr class="tr-sub"><td></td><td colspan="3" style="font-weight:700">Items Total</td>';
+    H+='<td class="r">Rs.'+_pn(b.sT)+'</td></tr>';
+    H+='</tbody></table>';
+  }
+
+  // ── REPLACEMENTS TABLE ──
+  if(prefs.showReplacements&&rr.length&&b.rT>0){
+    H+='<div class="sec-h red">Replacements Deducted</div>';
+    H+='<table><thead><tr>';
+    H+='<th style="width:28px">#</th><th>Item Description</th>';
+    H+='<th class="r" style="width:70px">Rate</th>';
+    H+='<th class="r" style="width:50px">Qty</th>';
+    H+='<th class="r" style="width:80px">Deducted</th></tr></thead><tbody>';
+    rr.forEach(function(row){
+      H+='<tr><td class="c">'+row[0]+'</td><td class="name">'+row[1]+'</td>';
+      H+='<td class="r">Rs.'+_pn(row[2])+'</td><td class="r">'+row[3]+'</td>';
+      H+='<td class="r" style="color:#c62828">-Rs.'+_pn(row[4])+'</td></tr>';
+    });
+    H+='<tr class="tr-rsub"><td></td><td colspan="3" style="font-weight:700">Total Deducted</td>';
+    H+='<td class="r">-Rs.'+_pn(b.rT)+'</td></tr>';
+    H+='</tbody></table>';
+  }
+
+  // ── SUMMARY BOX ──
+  var finalCls=rem<0?'sum-final extra':rem===0?'sum-final settled':'sum-final';
+  var finalLbl=rem<0?'Extra to Return':rem===0?'Fully Settled — No Balance':'Amount to Collect';
+  var finalVal=rem<0?'Rs.'+_pn(Math.abs(rem)):rem===0?'Rs. 0':'Rs.'+_pn(rem);
+  H+='<div class="sum">';
+  if(b.sT>0)H+='<div class="sum-row"><span>Items Total</span><span>Rs.'+_pn(b.sT)+'</span></div>';
+  if(b.rT>0)H+='<div class="sum-row red"><span>Less: Replacements</span><span>- Rs.'+_pn(b.rT)+'</span></div>';
+  if(b.adv>0)H+='<div class="sum-row org"><span>Less: Advance ('+(b.payMode==='upi'?'UPI':'Cash')+(prefs.showReceiver&&b.upiReceivedBy?' / '+b.upiReceivedBy:'')+')</span><span>- Rs.'+_pn(b.adv)+'</span></div>';
+  if(paidTotal>0)H+='<div class="sum-row grn"><span>Less: Payments Received</span><span>- Rs.'+_pn(paidTotal)+'</span></div>';
+  H+='<div class="'+finalCls+'"><span>'+finalLbl+'</span><span>'+finalVal+'</span></div>';
+  H+='</div>';
+
+  // ── PAYMENT HISTORY ──
+  if(b.payLog&&b.payLog.length){
+    H+='<div class="sec-h">Payment History</div>';
+    H+='<div class="ph">';
+    b.payLog.forEach(function(p){
+      H+='<div class="ph-row">';
+      H+='<div><div class="ph-who">'+(p.who||'Unknown')+(p.phone?' &nbsp;|&nbsp; '+p.phone:'')+'</div>';
+      H+='<div class="ph-dt">'+p.date+(p.note?' — '+p.note:'')+'</div></div>';
+      H+='<div class="ph-amt">+ Rs.'+_pn(p.amount)+'</div>';
+      H+='</div>';
+    });
+    H+='</div>';
+  }
+
+  // ── FOOTER ──
+  H+='<div class="foot">';
+  H+='<div class="foot-left"><strong>Jai Bhawani Industries</strong> — Jai Mata Di';
+  if(ph.length)H+='<br/>'+ph.join('  |  ');
+  H+='</div>';
+  H+='<div class="foot-right">Generated via Jai Bhawani Bills App</div>';
+  H+='</div>';
+
+  H+='</body></html>';
+  return H;
 }
+
 function _showPDF(b){
   _pdfBillData=b;
   const prefs=getPrefs();
@@ -1820,9 +1952,14 @@ function _showPDF(b){
   const bodyContent=bodyMatch?bodyMatch[1]:html;
   const styleMatch=html.match(/<style>([\s\S]*?)<\/style>/i);
   const billStyle=styleMatch?styleMatch[1]:'';
-  preview.innerHTML='<style>'+billStyle+'</style>'
-    +'<div id="pdf-bill-render" style="background:#fff;width:100%;max-width:400px;margin:0 auto;font-family:Segoe UI,Arial,sans-serif">'
-    +bodyContent+'</div>';
+  var mw=Math.min(window.innerWidth,430);
+  var sc=((mw-16)/794).toFixed(3);
+  preview.innerHTML='<div style="width:100%;overflow:hidden;display:flex;justify-content:center">'
+    +'<div style="transform:scale('+sc+');transform-origin:top left;width:794px;flex-shrink:0">'
+    +'<style>'+billStyle+'</style>'
+    +'<div id="pdf-bill-render" style="background:#fff;width:794px">'
+    +bodyContent+'</div></div></div>';
+  preview.parentElement.style.height=(1123*parseFloat(sc)+20)+'px';
   openM('m-pdf');
 }
 function openBillPDF(billId){
@@ -1944,7 +2081,7 @@ async function _generateRealPDF(b){
     var styleMatch=html.match(/<style>([\s\S]*?)<\/style>/i);
     var billStyle=styleMatch?styleMatch[1]:'';
     tempContainer=document.createElement('div');
-    tempContainer.style.cssText='position:fixed;left:-9999px;top:0;width:400px;background:#fff;z-index:-1;pointer-events:none';
+    tempContainer.style.cssText='position:fixed;left:-9999px;top:0;width:794px;background:#fff;z-index:-1;pointer-events:none';
     tempContainer.innerHTML='<style>'+billStyle+'</style><div id="_prt" style="background:#fff;width:400px">'+bodyContent+'</div>';
     document.body.appendChild(tempContainer);
     target=tempContainer.querySelector('#_prt');
@@ -1953,8 +2090,8 @@ async function _generateRealPDF(b){
   try{
     var canvas=await html2canvas(target,{
       scale:2,useCORS:true,allowTaint:true,backgroundColor:'#ffffff',
-      logging:false,width:400,height:target.scrollHeight,
-      windowWidth:420,scrollX:0,scrollY:0
+      logging:false,width:794,height:target.scrollHeight,
+      windowWidth:820,scrollX:0,scrollY:0
     });
     if(tempContainer)document.body.removeChild(tempContainer);
     return _canvasToPDFBlob(canvas);

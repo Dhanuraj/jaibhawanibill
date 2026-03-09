@@ -308,6 +308,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
 .prcv-result-lbl{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
 .prcv-result-val{font-family:'Poppins',sans-serif;font-size:22px;font-weight:800;margin-top:2px}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body data-theme="warm">
 <div id="app">
@@ -691,9 +692,12 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
       <button class="btn btn-g btn-xs" onclick="printBillPDF()" style="flex-shrink:0">🖨 Print</button>
     </div>
     <div class="pdf-modal-body" id="pdf-preview"></div>
-    <div class="pdf-modal-footer">
-      <button class="btn btn-a" onclick="printBillPDF()" style="flex:1;justify-content:center;padding:13px;font-size:14px">🖨 Print</button>
-      <button class="btn btn-wa" onclick="sharePDFViaWA()" style="flex:1;justify-content:center;padding:13px;font-size:14px">📲 Share on WA</button>
+    <div class="pdf-modal-footer" style="flex-direction:column;gap:8px">
+      <div style="display:flex;gap:8px;width:100%">
+        <button class="btn btn-a" onclick="printBillPDF()" style="flex:1;justify-content:center;padding:12px;font-size:13px">🖨 Print</button>
+        <button class="btn btn-g" onclick="downloadPDF()" style="flex:1;justify-content:center;padding:12px;font-size:13px;background:var(--abg);border-color:var(--abrd);color:var(--accent);font-weight:800">⬇ Download PDF</button>
+      </div>
+      <button class="btn btn-wa" id="pdf-share-btn" onclick="shareAsPDF()" style="width:100%;justify-content:center;padding:13px;font-size:14px;font-weight:800">📲 Share PDF via WhatsApp</button>
     </div>
   </div>
 </div>
@@ -1850,6 +1854,151 @@ function printBillPDF(){
   win.document.write(html);win.document.close();
   setTimeout(()=>{win.focus();win.print();},600);
 }
+// ── PDF FILE GENERATION & SHARE ──
+function _buildPDFFilename(b){
+  const name=(b.name||'bill').replace(/[^a-zA-Z0-9\s]/g,'').trim().replace(/\s+/g,'-');
+  const date=(b.date||'').replace(/\s/g,'-');
+  return 'JBI-'+name+'-'+date+'.pdf';
+}
+
+async function _generatePDFBlob(b){
+  const {jsPDF}=window.jspdf;
+  const prefs=getPrefs();
+  const html=buildBillHTML(b,prefs);
+
+  // Create a hidden iframe to render the bill HTML
+  return new Promise((resolve,reject)=>{
+    const iframe=document.createElement('iframe');
+    iframe.style.cssText='position:fixed;top:-9999px;left:-9999px;width:400px;height:1px;border:none;opacity:0;pointer-events:none';
+    document.body.appendChild(iframe);
+    iframe.srcdoc=html;
+    iframe.onload=function(){
+      try{
+        const doc=iframe.contentDocument||iframe.contentWindow.document;
+        const body=doc.body;
+        const fullH=body.scrollHeight;
+        iframe.style.height=fullH+'px';
+        // Wait for layout to settle
+        setTimeout(()=>{
+          try{
+            const pdf=new jsPDF({orientation:'portrait',unit:'pt',format:'a4'});
+            const pageW=pdf.internal.pageSize.getWidth();
+            const pageH=pdf.internal.pageSize.getHeight();
+            // Use jsPDF html() method for best quality
+            pdf.html(body,{
+              callback:function(doc){
+                document.body.removeChild(iframe);
+                const blob=doc.output('blob');
+                resolve(blob);
+              },
+              x:10,y:10,
+              width:pageW-20,
+              windowWidth:400,
+              autoPaging:'text',
+              margin:[10,10,10,10]
+            });
+          }catch(e){
+            document.body.removeChild(iframe);
+            reject(e);
+          }
+        },400);
+      }catch(e){
+        document.body.removeChild(iframe);
+        reject(e);
+      }
+    };
+    iframe.onerror=()=>{document.body.removeChild(iframe);reject(new Error('iframe load failed'));};
+  });
+}
+
+function _setShareBtnState(loading){
+  const btn=document.getElementById('pdf-share-btn');
+  if(!btn)return;
+  if(loading){
+    btn.disabled=true;
+    btn.innerHTML='⏳ Generating PDF…';
+    btn.style.opacity='.7';
+  }else{
+    btn.disabled=false;
+    btn.innerHTML='📲 Share PDF via WhatsApp';
+    btn.style.opacity='1';
+  }
+}
+
+async function shareAsPDF(){
+  if(!_pdfBillData)return;
+  const b=_pdfBillData;
+
+  // Check if Web Share API with files is supported (Android Chrome, iOS Safari 15+)
+  if(!navigator.share||!navigator.canShare){
+    // Fallback: download PDF + open WA text
+    toast('Sharing not supported — downloading PDF instead');
+    await downloadPDF();
+    return;
+  }
+
+  _setShareBtnState(true);
+  try{
+    const blob=await _generatePDFBlob(b);
+    const filename=_buildPDFFilename(b);
+    const file=new File([blob],[filename],{type:'application/pdf'});
+
+    // Check if this device can share files
+    if(!navigator.canShare({files:[file]})){
+      toast('File sharing not supported — downloading PDF');
+      _downloadBlob(blob,filename);
+      _setShareBtnState(false);
+      return;
+    }
+
+    await navigator.share({
+      title:'Bill — Jai Bhawani Industries',
+      text:'Please find the bill attached.',
+      files:[file]
+    });
+    closeM('m-pdf');
+    toast('PDF shared successfully ✓');
+  }catch(err){
+    if(err.name==='AbortError'){
+      toast('Share cancelled');
+    }else{
+      // Last resort: just download
+      toast('Generating PDF for download…');
+      await downloadPDF();
+    }
+  }finally{
+    _setShareBtnState(false);
+  }
+}
+
+function _downloadBlob(blob,filename){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);document.body.removeChild(a);},2000);
+}
+
+async function downloadPDF(){
+  if(!_pdfBillData){toast('No bill loaded','e');return;}
+  const btn=document.getElementById('pdf-share-btn');
+  const origInner=btn?btn.innerHTML:'';
+  if(btn){btn.disabled=true;}
+  toast('Generating PDF…');
+  try{
+    const blob=await _generatePDFBlob(_pdfBillData);
+    const filename=_buildPDFFilename(_pdfBillData);
+    _downloadBlob(blob,filename);
+    toast('PDF downloaded ✓');
+  }catch(e){
+    toast('PDF generation failed — try Print instead','e');
+    console.error('PDF gen error:',e);
+  }finally{
+    if(btn){btn.disabled=false;}
+  }
+}
+
+// Keep old WA text share as fallback (used internally)
 function sharePDFViaWA(){
   if(!_pdfBillData)return;
   const b=_pdfBillData;
@@ -1863,37 +2012,19 @@ function sharePDFViaWA(){
   if(ph.length)m+=ph.map(function(p){return '\uD83D\uDCDE '+p;}).join('  \u00B7  ')+NL;
   m+=D+NL;
   m+=(b.billType==='in'?'\uD83C\uDFED *In-Company Bill*':'\uD83D\uDE9A *Out-Company Bill*')+NL;
-  if(b.billId)m+='\uD83C\uDD94 *Bill No: '+b.billId+'*'+NL;
   m+='\uD83D\uDCC5 '+(b.date||new Date().toLocaleDateString('en-IN'))+NL;
   if(prefs.showParty&&b.party)m+='\uD83D\uDC64 '+b.party+(prefs.showPhone&&b.partyPhone?' \u00B7 \uD83D\uDCDE'+b.partyPhone:'')+NL;
-  if(b.vehicle&&prefs.showVehicle&&b.vehicle.driver)m+='\uD83D\uDE97 '+b.vehicle.driver+(b.vehicle.phone?' \u00B7 \uD83D\uDCDE'+b.vehicle.phone:'')+(b.vehicle.number?' \u00B7 \uD83D\uDD22'+b.vehicle.number:'')+NL;
-  m+=D+NL;
-  m+='\uD83D\uDCE6 *ITEMS SOLD*'+NL;
   var sno=1;
   (b.saleItems||[]).forEach(function(i){if(i.total>0){m+=sno+'. '+i.name+' \u00D7 '+i.qty+' @ \u20B9'+_pn(i.price)+' = *\u20B9'+_pn(i.total)+'*'+NL;sno++;}});
   m+=NL+'\uD83D\uDCB0 *Items Total: \u20B9'+_pn(b.sT)+'*'+NL;
-  if(prefs.showReplacements&&b.replItems&&b.replItems.length&&b.rT>0){
-    m+=D+NL+'\uD83D\uDD04 *REPLACEMENTS (Deducted)*'+NL;
-    var rno=1;
-    b.replItems.forEach(function(i){if(i.total>0){m+=rno+'. '+i.name+' \u00D7 '+i.qty+' @ \u20B9'+_pn(i.price)+' = \u20B9'+_pn(i.total)+NL;rno++;}});
-    m+='\uD83D\uDD3B *Total Deducted: \u20B9'+_pn(b.rT)+'*'+NL;
-  }
-  if(b.adv>0){
-    var ml=b.payMode==='upi'?'\uD83D\uDCF1 UPI':'\uD83D\uDCB5 Cash';
-    m+=D+NL+'\uD83D\uDCB3 *Advance: \u20B9'+_pn(b.adv)+'* via '+ml+(prefs.showReceiver&&b.upiReceivedBy?' ('+b.upiReceivedBy+')':'')+NL;
-  }
-  if(b.payLog&&b.payLog.length){
-    m+=D+NL+'\uD83D\uDCB0 *PAYMENT HISTORY*'+NL;
-    b.payLog.forEach(function(p){m+='\u2022 '+(p.who||'Unknown')+' \u2014 \u20B9'+_pn(p.amount)+' ('+p.date+')'+NL;});
-  }
-  m+=D+NL;
-  if(rem<0)m+='\uD83D\uDFE2 *Extra to Return: \u20B9'+_pn(Math.abs(rem))+'*'+NL;
-  else if(rem===0)m+='\u2705 *Fully Settled \u2014 No Balance Due*'+NL;
-  else m+='\uD83D\uDD34 *Final to Collect: \u20B9'+_pn(rem)+'*'+NL;
+  if(rem<0)m+='\uD83D\uDFE2 *Extra: \u20B9'+_pn(Math.abs(rem))+'*'+NL;
+  else if(rem===0)m+='\u2705 *Fully Settled*'+NL;
+  else m+='\uD83D\uDD34 *To Collect: \u20B9'+_pn(rem)+'*'+NL;
   m+=D+NL+'_\uD83D\uDE4F Jai Bhawani Industries \u2014 Jai Mata Di_';
   closeM('m-pdf');
   window.open('https://wa.me/?text='+encodeURIComponent(m),'_blank');
 }
+
 
 // ── MODAL ──
 function openM(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}

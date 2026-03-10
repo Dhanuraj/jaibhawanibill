@@ -1995,7 +1995,24 @@ function buildBillHTML(b,prefs){
      '</div>'+
      '</div>';
 
-  H+='</div></body></html>';
+  H+=
+    '<div class="print-bar">'+
+    '<button onclick="window.print()" class="print-btn">&#128424; Print / Save as PDF</button>'+
+    '<div class="print-hint">Open in browser &rarr; Tap this button &rarr; Choose "Save as PDF"</div>'+
+    '</div>'+
+    '<style>'+
+    '.print-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;'+
+               'border-top:2px solid #f0d5c0;padding:12px 20px;display:flex;'+
+               'align-items:center;gap:14px;box-shadow:0 -4px 20px rgba(0,0,0,.12);z-index:9999}'+
+    '.print-btn{background:linear-gradient(135deg,#b04c14,#e0681e);color:#fff;border:none;'+
+               'padding:12px 28px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;'+
+               'font-family:"Segoe UI",Arial,sans-serif;box-shadow:0 2px 10px rgba(180,76,20,.4);'+
+               'flex-shrink:0;letter-spacing:.2px}'+
+    '.print-btn:active{transform:scale(.97);opacity:.9}'+
+    '.print-hint{font-size:11px;color:#a09a92;line-height:1.5}'+
+    '@media print{.print-bar{display:none!important}body{padding-bottom:0!important}}'+
+    '</style>'+
+    '</div></body></html>';
   return H;
 }
 

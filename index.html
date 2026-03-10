@@ -308,7 +308,6 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
 .prcv-result-lbl{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
 .prcv-result-val{font-family:'Poppins',sans-serif;font-size:22px;font-weight:800;margin-top:2px}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body data-theme="warm">
 <div id="app">
@@ -695,9 +694,9 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
     <div class="pdf-modal-footer" style="flex-direction:column;gap:8px">
       <div style="display:flex;gap:8px;width:100%">
         <button class="btn btn-a" onclick="printBillPDF()" style="flex:1;justify-content:center;padding:12px;font-size:13px">🖨 Print</button>
-        <button class="btn btn-g" id="btn-dl-pdf" onclick="downloadPDF()" style="flex:1;justify-content:center;padding:12px;font-size:13px;background:var(--abg);border-color:var(--abrd);color:var(--accent);font-weight:800">⬇ Download PDF</button>
+        <button class="btn btn-g" onclick="downloadBillHTML()" style="flex:1;justify-content:center;padding:12px;font-size:13px;background:var(--abg);border-color:var(--abrd);color:var(--accent);font-weight:800">⬇ Download</button>
       </div>
-      <button class="btn btn-wa" id="btn-share-pdf" onclick="shareAsPDF()" style="width:100%;justify-content:center;padding:13px;font-size:14px;font-weight:800">📲 Share PDF via WhatsApp</button>
+      <button class="btn btn-wa" onclick="shareBillHTML()" style="width:100%;justify-content:center;padding:13px;font-size:14px;font-weight:800">📲 Share via WhatsApp</button>
     </div>
   </div>
 </div>
@@ -1732,236 +1731,299 @@ function buildBillHTML(b,prefs){
   var ph=[ci.phone1,ci.phone2].filter(Boolean);
   var rem=billRemainingDue(b);
   var st=billStatus(b);
-  var stLbl=st==='paid'?'PAID':st==='due'?'DUE':'PENDING';
-  var stClr=st==='paid'?'#1b7a3e':st==='due'?'#c62828':'#b45309';
-  var stBg=st==='paid'?'#e8f5e9':st==='due'?'#ffebee':'#fef3c7';
-  var stBdr=st==='paid'?'#a5d6a7':st==='due'?'#ef9a9a':'#fcd34d';
-  var paidTotal=(b.payLog||[]).reduce(function(s,p){return s+(parseFloat(p.amount)||0);},0);
-
-  // Helper: number rows (only items with total>0)
-  function saleRows(){
-    var rows=[];var n=1;
-    (b.saleItems||[]).forEach(function(i){if(i.total>0)rows.push([n++,i.name,i.price,i.qty,i.total]);});
-    return rows;
-  }
-  function replRows(){
-    var rows=[];var n=1;
-    (b.replItems||[]).forEach(function(i){if(i.total>0)rows.push([n++,i.name,i.price,i.qty,i.total]);});
-    return rows;
-  }
-  var sr=saleRows();var rr=replRows();
-
-  // CSS — A4 page width 794px at 96dpi. We design at 700px for margins.
-  // Everything sized to fit one A4 page (1123px tall at 96dpi).
-  var css=[
-    '*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
-    'body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#1a1a1a;background:#fff;',
-         'width:794px;min-height:1123px;padding:32px 36px;line-height:1.4}',
-    // Header
-    '.hdr{background:linear-gradient(135deg,#b35318 0%,#e0671e 55%,#f09040 100%);',
-         'color:#fff;padding:18px 22px 14px;border-radius:6px;margin-bottom:14px;',
-         'display:flex;justify-content:space-between;align-items:flex-start}',
-    '.hdr-left{}',
-    '.hdr-co{font-size:18px;font-weight:700;letter-spacing:-.2px;margin-bottom:2px}',
-    '.hdr-tag{font-size:9px;opacity:.8;letter-spacing:.5px;text-transform:uppercase}',
-    '.hdr-ph{font-size:9.5px;margin-top:7px;opacity:.9}',
-    '.hdr-right{text-align:right}',
-    '.hdr-inv{font-size:10px;opacity:.75;text-transform:uppercase;letter-spacing:.8px}',
-    '.hdr-billid{font-size:16px;font-weight:700;letter-spacing:.5px;margin-top:2px}',
-    '.hdr-status{display:inline-block;margin-top:5px;padding:2px 9px;border-radius:3px;',
-                'font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:rgba(255,255,255,.25)}',
-    // Meta row
-    '.meta{display:flex;gap:0;border:1px solid #e0ddd8;border-radius:4px;overflow:hidden;margin-bottom:12px}',
-    '.mi{flex:1;padding:7px 12px;border-right:1px solid #e0ddd8;background:#faf9f6}',
-    '.mi:last-child{border-right:none}',
-    '.ml{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#999;margin-bottom:2px}',
-    '.mv{font-size:10.5px;font-weight:600;color:#222}',
-    // Party / vehicle
-    '.party-row{background:#f7f6f3;border:1px solid #e8e4dc;border-radius:4px;padding:8px 12px;margin-bottom:10px;display:flex;gap:24px}',
-    '.pr-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#999;margin-bottom:2px}',
-    '.pr-val{font-size:10.5px;font-weight:600;color:#222}',
-    // Section heading
-    '.sec-h{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;',
-            'color:#888;border-bottom:1.5px solid #e8e4dc;padding-bottom:4px;margin-bottom:0}',
-    '.sec-h.red{color:#c62828;border-color:#f5c6c6}',
-    // Tables
-    'table{width:100%;border-collapse:collapse;margin-bottom:10px}',
-    'th{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;',
-        'color:#888;padding:6px 8px;background:#f7f6f3;border-bottom:1.5px solid #e0ddd8;text-align:left}',
-    'th.r{text-align:right}',
-    'td{font-size:10px;padding:5px 8px;border-bottom:1px solid #f0ede8;color:#2a2a2a;vertical-align:middle}',
-    'td.r{text-align:right;font-weight:600}',
-    'td.c{text-align:center;color:#bbb;font-size:9px}',
-    'td.name{font-weight:500}',
-    '.tr-sub td{background:#fff8f4;font-size:10px;font-weight:700;color:#c45e1a}',
-    '.tr-rsub td{background:#fff4f4;font-size:10px;font-weight:700;color:#c62828}',
-    // Summary box
-    '.sum{border:1px solid #e0ddd8;border-radius:4px;overflow:hidden;margin-bottom:10px;width:55%;margin-left:auto}',
-    '.sum-row{display:flex;justify-content:space-between;padding:5px 10px;border-bottom:1px solid #f0ede8;font-size:10px}',
-    '.sum-row:last-child{border-bottom:none}',
-    '.sum-row.red{color:#c62828}',
-    '.sum-row.org{color:#c45e1a}',
-    '.sum-row.grn{color:#1b7a3e}',
-    '.sum-final{display:flex;justify-content:space-between;padding:8px 10px;',
-               'background:#e0671e;color:#fff;font-size:11px;font-weight:700}',
-    '.sum-final.settled{background:#1b7a3e}',
-    '.sum-final.extra{background:#1565c0}',
-    // Payment history
-    '.ph{border:1px solid #e0ddd8;border-radius:4px;overflow:hidden;margin-bottom:10px}',
-    '.ph-row{display:flex;justify-content:space-between;align-items:center;padding:5px 10px;border-bottom:1px solid #f0ede8;font-size:9.5px}',
-    '.ph-row:last-child{border-bottom:none}',
-    '.ph-who{font-weight:600;color:#222}',
-    '.ph-dt{font-size:8.5px;color:#aaa;margin-top:1px}',
-    '.ph-amt{font-weight:700;color:#1b7a3e}',
-    // Footer
-    '.foot{margin-top:auto;padding-top:12px;border-top:1px solid #e0ddd8;',
-           'display:flex;justify-content:space-between;align-items:center}',
-    '.foot-left{font-size:8.5px;color:#aaa}',
-    '.foot-left strong{color:#e0671e}',
-    '.foot-right{font-size:8px;color:#bbb}',
-    '@media print{body{padding:24px 28px}',
-                  '.hdr{-webkit-print-color-adjust:exact;print-color-adjust:exact}',
-                  '.sum-final{-webkit-print-color-adjust:exact;print-color-adjust:exact}}'
-  ].join('');
-
-  var H='<!DOCTYPE html><html><head><meta charset="UTF-8"/>'
-    +'<style>'+css+'</style></head><body>';
-
-  // ── HEADER ──
-  H+='<div class="hdr">';
-  H+='<div class="hdr-left">';
-  H+='<div class="hdr-co">Jai Bhawani Industries</div>';
-  H+='<div class="hdr-tag">Jai Mata Di  |  '+( b.billType==='in'?'Internal Bill':'External Bill' )+'</div>';
-  if(ph.length)H+='<div class="hdr-ph">'+ph.join('  |  ')+'</div>';
-  H+='</div>';
-  H+='<div class="hdr-right">';
-  H+='<div class="hdr-inv">Invoice</div>';
-  H+='<div class="hdr-billid">'+(b.billId||b.id||'—')+'</div>';
-  H+='<div class="hdr-status">'+stLbl+'</div>';
-  H+='</div>';
-  H+='</div>';
-
-  // ── META ROW ──
-  H+='<div class="meta">';
-  H+='<div class="mi"><div class="ml">Bill Name</div><div class="mv">'+(b.name||'—')+'</div></div>';
-  H+='<div class="mi"><div class="ml">Date</div><div class="mv">'+(b.date||'—')+'</div></div>';
-  H+='<div class="mi"><div class="ml">Type</div><div class="mv">'+(b.billType==='in'?'In-Company':'Out-Company')+'</div></div>';
-  H+='<div class="mi"><div class="ml">Status</div><div class="mv" style="font-weight:700;color:'+stClr+'">'+stLbl+'</div></div>';
-  H+='</div>';
-
-  // ── PARTY / VEHICLE ROW ──
+  var paid=(b.payLog||[]).reduce(function(s,p){return s+(parseFloat(p.amount)||0);},0);
+  var sr=[],rr=[],sn=1,rn=1;
+  (b.saleItems||[]).forEach(function(i){if(i.total>0)sr.push([sn++,i.name,i.price,i.qty,i.total]);});
+  (b.replItems||[]).forEach(function(i){if(i.total>0)rr.push([rn++,i.name,i.price,i.qty,i.total]);});
+  var showRepl=prefs.showReplacements&&rr.length&&b.rT>0;
   var showParty=prefs.showParty&&b.party;
   var showVeh=prefs.showVehicle&&b.vehicle&&(b.vehicle.driver||b.vehicle.number);
+
+  /* ─── status ─── */
+  var stLbl,stBg,stClr,stBrd;
+  if(st==='paid'){stLbl='PAID';stBg='#e8f5e9';stClr='#2e7d32';stBrd='#a5d6a7';}
+  else if(st==='due'){stLbl='DUE';stBg='#ffebee';stClr='#c62828';stBrd='#ef9a9a';}
+  else{stLbl='PENDING';stBg='#fff8e1';stClr='#f57f17';stBrd='#ffe082';}
+
+  /* ─── extra / amount to collect ─── */
+  var isExtra=(rem<0);
+  var isSettled=(rem===0);
+  var finalLabel=isExtra?'Extra to Return':isSettled?'Fully Settled':'Amount to Collect';
+  var finalAmt  =isExtra?('\u20b9'+_pn(Math.abs(rem))):('\u20b9'+_pn(Math.max(0,rem)));
+  var finalBg   =isExtra?'#e8f0ff':isSettled?'#e8f5e9':'#fff8f4';
+  var finalClr  =isExtra?'#1565c0':isSettled?'#2e7d32':'#e8722a';
+  var finalIcon =isExtra?'&#8617;':isSettled?'&#10003;':'&#8377;';
+
+  var css=[
+    '*{box-sizing:border-box;margin:0;padding:0}',
+    'body{font-family:"Segoe UI",Arial,sans-serif;color:#1e1c18;background:#f7f3ee;',
+         'padding:20px;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '@media print{body{background:#fff;padding:0}}',
+
+    /* Wrapper */
+    '.wrap{background:#fff;border-radius:12px;overflow:hidden;',
+          'box-shadow:0 2px 20px rgba(0,0,0,.10);max-width:680px;margin:0 auto}',
+
+    /* Header */
+    '.hdr{background:linear-gradient(135deg,#b04c14 0%,#e0681e 50%,#f5a048 100%);',
+          'color:#fff;padding:24px 28px 20px;position:relative;overflow:hidden}',
+    '.hdr::after{content:"";position:absolute;top:-40px;right:-30px;width:160px;height:160px;',
+                'border-radius:50%;background:rgba(255,255,255,.07);pointer-events:none}',
+    '.hdr::before{content:"";position:absolute;bottom:-50px;left:-20px;width:120px;height:120px;',
+                 'border-radius:50%;background:rgba(0,0,0,.06);pointer-events:none}',
+    '.hdr-inner{position:relative;display:flex;justify-content:space-between;align-items:flex-start}',
+    '.hdr-left{}',
+    '.co-name{font-size:20px;font-weight:800;letter-spacing:-.3px;text-shadow:0 1px 2px rgba(0,0,0,.15)}',
+    '.co-tagline{font-size:10px;opacity:.75;letter-spacing:1.2px;text-transform:uppercase;margin-top:3px}',
+    '.co-phones{font-size:11px;margin-top:8px;opacity:.9;font-weight:600}',
+    '.hdr-right{text-align:right}',
+    '.inv-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;opacity:.7}',
+    '.inv-num{font-size:18px;font-weight:800;letter-spacing:.3px;margin-top:1px}',
+    '.inv-date{font-size:11px;opacity:.85;margin-top:3px}',
+    '.inv-type{font-size:9px;background:rgba(255,255,255,.2);padding:3px 9px;',
+               'border-radius:20px;margin-top:5px;display:inline-block;',
+               'letter-spacing:.8px;text-transform:uppercase;font-weight:700}',
+
+    /* Status bar */
+    '.status-bar{display:flex;align-items:center;justify-content:space-between;',
+                'padding:8px 28px;background:#fff7f0;border-bottom:2px solid #f0ece5}',
+    '.sb-left{display:flex;align-items:center;gap:8px;font-size:11px;color:#6b6560;font-weight:500}',
+    '.status-chip{padding:3px 12px;border-radius:20px;font-size:10px;font-weight:800;',
+                 'text-transform:uppercase;letter-spacing:1px;border:1.5px solid}',
+
+    /* Meta strip */
+    '.meta{display:flex;background:#faf8f5;border-bottom:1.5px solid #ede9e2}',
+    '.mi{flex:1;padding:10px 16px;border-right:1px solid #ede9e2}',
+    '.mi:last-child{border-right:none}',
+    '.ml{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#a09a92;margin-bottom:3px}',
+    '.mv{font-size:11px;font-weight:700;color:#1e1c18}',
+
+    /* Party / vehicle */
+    '.party-sec{padding:12px 24px;background:#fdf9f5;border-bottom:1px solid #ede9e2;display:flex;gap:32px;flex-wrap:wrap}',
+    '.p-grp{}',
+    '.p-lbl{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#a09a92;margin-bottom:2px}',
+    '.p-val{font-size:12px;font-weight:700;color:#1e1c18}',
+
+    /* Section heading */
+    '.sec-hd{padding:14px 24px 6px;font-size:9px;font-weight:800;text-transform:uppercase;',
+            'letter-spacing:1.5px;color:#a09a92;display:flex;align-items:center;gap:6px}',
+    '.sec-hd span{flex:1;height:1px;background:#ede9e2;margin-left:6px}',
+    '.sec-hd.red{color:#c62828}',
+
+    /* Tables */
+    '.tbl{padding:0 24px 4px}',
+    'table{width:100%;border-collapse:collapse}',
+    'thead th{background:#2d2520;color:#fff;font-size:9px;font-weight:700;',
+             'text-transform:uppercase;letter-spacing:.6px;padding:9px 10px;text-align:left}',
+    'thead th.r{text-align:right}',
+    'thead th.c{text-align:center;width:30px}',
+    'tbody tr:nth-child(odd){background:#fff}',
+    'tbody tr:nth-child(even){background:#faf8f5}',
+    'td{font-size:11px;padding:8px 10px;color:#2a2420;border-bottom:1px solid #f2ede8;vertical-align:middle}',
+    'td.r{text-align:right;font-weight:600}',
+    'td.c{text-align:center;color:#c0bab5;font-size:10px}',
+    '.tfoot td{background:#fff4ec;color:#c45e1a;font-weight:800;font-size:11.5px;',
+              'border-top:2px solid #f0d5c0;border-bottom:2px solid #f0d5c0;padding:9px 10px}',
+    '.rfoot td{background:#fff2f2;color:#c62828;font-weight:800;font-size:11.5px;',
+              'border-top:2px solid #f5c5c5;border-bottom:2px solid #f5c5c5;padding:9px 10px}',
+
+    /* Summary */
+    '.sum-outer{padding:16px 24px 0;display:flex;justify-content:flex-end}',
+    '.sum-box{width:54%;border:1.5px solid #ede9e2;border-radius:10px;overflow:hidden;',
+             'box-shadow:0 1px 6px rgba(0,0,0,.06)}',
+    '.sr{display:flex;justify-content:space-between;align-items:center;',
+        'padding:8px 14px;border-bottom:1px solid #f2ede8;font-size:11px}',
+    '.sr:last-child{border-bottom:none}',
+    '.sr-lbl{color:#6b6560}.sr-val{font-weight:700;color:#1e1c18}',
+    '.sr.red .sr-lbl{color:#c62828}.sr.red .sr-val{color:#c62828}',
+    '.sr.org .sr-lbl{color:#c45e1a}.sr.org .sr-val{color:#c45e1a}',
+    '.sr.grn .sr-lbl{color:#2e7d32}.sr.grn .sr-val{color:#2e7d32}',
+    '.sr-final{display:flex;justify-content:space-between;align-items:center;padding:12px 14px}',
+    '.sf-lbl{font-size:12px;font-weight:700}',
+    '.sf-val{font-size:17px;font-weight:800;letter-spacing:-.3px}',
+
+    /* Payment history */
+    '.ph-outer{padding:4px 24px 0}',
+    '.ph-row{display:flex;justify-content:space-between;align-items:center;',
+            'padding:8px 0;border-bottom:1px solid #f2ede8;font-size:11px}',
+    '.ph-row:last-child{border-bottom:none}',
+    '.ph-who{font-weight:700;color:#1e1c18}',
+    '.ph-dt{font-size:9px;color:#a09a92;margin-top:1px}',
+    '.ph-amt{font-size:13px;font-weight:800;color:#2e7d32}',
+
+    /* Footer */
+    '.foot{margin:20px 24px 24px;padding-top:14px;border-top:1.5px solid #ede9e2;',
+           'display:flex;justify-content:space-between;align-items:center}',
+    '.foot-l{font-size:10px;color:#a09a92}',
+    '.foot-l strong{color:#e0681e;font-size:11px}',
+    '.foot-r{font-size:9px;color:#c8c2ba;text-align:right}'
+  ].join('');
+
+  var H='<!DOCTYPE html><html><head><meta charset="UTF-8"/>'+
+    '<style>'+css+'</style></head><body><div class="wrap">';
+
+  /* ── HEADER ── */
+  H+='<div class="hdr"><div class="hdr-inner">'+
+     '<div class="hdr-left">'+
+       '<div class="co-name">Jai Bhawani Industries</div>'+
+       '<div class="co-tagline">Jai Mata Di</div>'+
+       (ph.length?'<div class="co-phones">'+ph.map(function(p){return '&#9990; '+p;}).join('&nbsp;&nbsp;&middot;&nbsp;&nbsp;')+'</div>':'')+
+     '</div>'+
+     '<div class="hdr-right">'+
+       '<div class="inv-lbl">Invoice</div>'+
+       '<div class="inv-num">'+(b.billId||b.id||'&mdash;')+'</div>'+
+       '<div class="inv-date">'+(b.date||'&mdash;')+'</div>'+
+       '<div class="inv-type">'+(b.billType==='in'?'In-Company':'Out-Company')+'</div>'+
+     '</div>'+
+     '</div></div>';
+
+  /* ── STATUS BAR ── */
+  H+='<div class="status-bar">'+
+     '<div class="sb-left">'+
+       '<div class="status-chip" style="background:'+stBg+';color:'+stClr+';border-color:'+stBrd+'">'+stLbl+'</div>'+
+       (b.name?'<span style="font-weight:700;color:#1e1c18">'+b.name+'</span>':'')+'</div>'+
+     '<div style="font-size:10px;color:#a09a92;font-weight:600">'+(b.date||'')+'</div>'+
+     '</div>';
+
+  /* ── META ── */
+  H+='<div class="meta">'+
+     '<div class="mi"><div class="ml">Bill No.</div><div class="mv" style="color:#e0681e">'+(b.billId||'&mdash;')+'</div></div>'+
+     '<div class="mi"><div class="ml">Bill Name</div><div class="mv">'+(b.name||'&mdash;')+'</div></div>'+
+     '<div class="mi"><div class="ml">Date</div><div class="mv">'+(b.date||'&mdash;')+'</div></div>'+
+     '<div class="mi"><div class="ml">Type</div><div class="mv">'+(b.billType==='in'?'In-Company':'Out-Company')+'</div></div>'+
+     '</div>';
+
+  /* ── PARTY / VEHICLE ── */
   if(showParty||showVeh){
-    H+='<div class="party-row">';
-    if(showParty){
-      H+='<div><div class="pr-label">Party / Customer</div>';
-      H+='<div class="pr-val">'+b.party+(prefs.showPhone&&b.partyPhone?' &nbsp;|&nbsp; '+b.partyPhone:'')+'</div></div>';
-    }
-    if(showVeh){
-      var v=b.vehicle;
-      H+='<div><div class="pr-label">Vehicle / Driver</div>';
-      H+='<div class="pr-val">'+(v.driver||'')+(v.number?' | '+v.number:'')+(v.phone?' | '+v.phone:'')+'</div></div>';
-    }
+    H+='<div class="party-sec">';
+    if(showParty)H+='<div class="p-grp"><div class="p-lbl">Party / Customer</div>'+
+      '<div class="p-val">'+b.party+(prefs.showPhone&&b.partyPhone?' &nbsp;&middot;&nbsp; '+b.partyPhone:'')+'</div></div>';
+    if(showVeh){var v=b.vehicle;
+      H+='<div class="p-grp"><div class="p-lbl">Driver / Vehicle</div>'+
+        '<div class="p-val">'+(v.driver||'')+(v.number?' &nbsp;&middot;&nbsp; '+v.number:'')+(v.phone?' &nbsp;&middot;&nbsp; '+v.phone:'')+'</div></div>';}
     H+='</div>';
   }
 
-  // ── ITEMS SOLD TABLE ──
+  /* ── ITEMS SOLD ── */
   if(sr.length){
-    H+='<div class="sec-h">Items Sold</div>';
-    H+='<table><thead><tr>';
-    H+='<th style="width:28px">#</th><th>Item Description</th>';
-    H+='<th class="r" style="width:70px">Rate</th>';
-    H+='<th class="r" style="width:50px">Qty</th>';
-    H+='<th class="r" style="width:80px">Amount</th></tr></thead><tbody>';
+    H+='<div class="sec-hd">Items Sold<span></span></div>'+
+       '<div class="tbl"><table>'+
+       '<thead><tr>'+
+       '<th class="c">#</th>'+
+       '<th>Item</th>'+
+       '<th class="r" style="width:80px">&#8377;/pc</th>'+
+       '<th class="r" style="width:60px">Qty</th>'+
+       '<th class="r" style="width:90px">Total</th>'+
+       '</tr></thead><tbody>';
     sr.forEach(function(row){
-      H+='<tr><td class="c">'+row[0]+'</td><td class="name">'+row[1]+'</td>';
-      H+='<td class="r">Rs.'+_pn(row[2])+'</td><td class="r">'+row[3]+'</td>';
-      H+='<td class="r">Rs.'+_pn(row[4])+'</td></tr>';
+      H+='<tr>'+
+         '<td class="c">'+row[0]+'</td>'+
+         '<td>'+row[1]+'</td>'+
+         '<td class="r">&#8377;'+_pn(row[2])+'</td>'+
+         '<td class="r">'+row[3]+'</td>'+
+         '<td class="r">&#8377;'+_pn(row[4])+'</td>'+
+         '</tr>';
     });
-    H+='<tr class="tr-sub"><td></td><td colspan="3" style="font-weight:700">Items Total</td>';
-    H+='<td class="r">Rs.'+_pn(b.sT)+'</td></tr>';
-    H+='</tbody></table>';
+    H+='<tr class="tfoot">'+
+       '<td></td><td colspan="3">Items Total</td>'+
+       '<td class="r">&#8377;'+_pn(b.sT)+'</td>'+
+       '</tr>';
+    H+='</tbody></table></div>';
   }
 
-  // ── REPLACEMENTS TABLE ──
-  if(prefs.showReplacements&&rr.length&&b.rT>0){
-    H+='<div class="sec-h red">Replacements Deducted</div>';
-    H+='<table><thead><tr>';
-    H+='<th style="width:28px">#</th><th>Item Description</th>';
-    H+='<th class="r" style="width:70px">Rate</th>';
-    H+='<th class="r" style="width:50px">Qty</th>';
-    H+='<th class="r" style="width:80px">Deducted</th></tr></thead><tbody>';
+  /* ── REPLACEMENTS ── */
+  if(showRepl){
+    H+='<div class="sec-hd red">Replacements Deducted<span></span></div>'+
+       '<div class="tbl"><table>'+
+       '<thead><tr style="background:#5c1a1a">'+
+       '<th class="c">#</th>'+
+       '<th>Item</th>'+
+       '<th class="r" style="width:80px">&#8377;/pc</th>'+
+       '<th class="r" style="width:60px">Qty</th>'+
+       '<th class="r" style="width:90px">Deducted</th>'+
+       '</tr></thead><tbody>';
     rr.forEach(function(row){
-      H+='<tr><td class="c">'+row[0]+'</td><td class="name">'+row[1]+'</td>';
-      H+='<td class="r">Rs.'+_pn(row[2])+'</td><td class="r">'+row[3]+'</td>';
-      H+='<td class="r" style="color:#c62828">-Rs.'+_pn(row[4])+'</td></tr>';
+      H+='<tr>'+
+         '<td class="c">'+row[0]+'</td>'+
+         '<td style="color:#c62828">'+row[1]+'</td>'+
+         '<td class="r" style="color:#c62828">&#8377;'+_pn(row[2])+'</td>'+
+         '<td class="r" style="color:#c62828">'+row[3]+'</td>'+
+         '<td class="r" style="color:#c62828">&minus;&#8377;'+_pn(row[4])+'</td>'+
+         '</tr>';
     });
-    H+='<tr class="tr-rsub"><td></td><td colspan="3" style="font-weight:700">Total Deducted</td>';
-    H+='<td class="r">-Rs.'+_pn(b.rT)+'</td></tr>';
-    H+='</tbody></table>';
+    H+='<tr class="rfoot">'+
+       '<td></td><td colspan="3">Total Deducted</td>'+
+       '<td class="r">&minus;&#8377;'+_pn(b.rT)+'</td>'+
+       '</tr>';
+    H+='</tbody></table></div>';
   }
 
-  // ── SUMMARY BOX ──
-  var finalCls=rem<0?'sum-final extra':rem===0?'sum-final settled':'sum-final';
-  var finalLbl=rem<0?'Extra to Return':rem===0?'Fully Settled — No Balance':'Amount to Collect';
-  var finalVal=rem<0?'Rs.'+_pn(Math.abs(rem)):rem===0?'Rs. 0':'Rs.'+_pn(rem);
-  H+='<div class="sum">';
-  if(b.sT>0)H+='<div class="sum-row"><span>Items Total</span><span>Rs.'+_pn(b.sT)+'</span></div>';
-  if(b.rT>0)H+='<div class="sum-row red"><span>Less: Replacements</span><span>- Rs.'+_pn(b.rT)+'</span></div>';
-  if(b.adv>0)H+='<div class="sum-row org"><span>Less: Advance ('+(b.payMode==='upi'?'UPI':'Cash')+(prefs.showReceiver&&b.upiReceivedBy?' / '+b.upiReceivedBy:'')+')</span><span>- Rs.'+_pn(b.adv)+'</span></div>';
-  if(paidTotal>0)H+='<div class="sum-row grn"><span>Less: Payments Received</span><span>- Rs.'+_pn(paidTotal)+'</span></div>';
-  H+='<div class="'+finalCls+'"><span>'+finalLbl+'</span><span>'+finalVal+'</span></div>';
-  H+='</div>';
+  /* ── SUMMARY ── */
+  H+='<div class="sum-outer"><div class="sum-box">';
+  if(b.sT>0)H+='<div class="sr"><span class="sr-lbl">Items Total</span><span class="sr-val">&#8377;'+_pn(b.sT)+'</span></div>';
+  if(b.rT>0)H+='<div class="sr red"><span class="sr-lbl">&minus; Replacements</span><span class="sr-val">&minus;&#8377;'+_pn(b.rT)+'</span></div>';
+  if(b.adv>0)H+='<div class="sr org"><span class="sr-lbl">&minus; Advance ('+(b.payMode==='upi'?'UPI':'Cash')+(prefs.showReceiver&&b.upiReceivedBy?' &middot; '+b.upiReceivedBy:'')+')</span><span class="sr-val">&minus;&#8377;'+_pn(b.adv)+'</span></div>';
+  if(paid>0)H+='<div class="sr grn"><span class="sr-lbl">&minus; Payments Received</span><span class="sr-val">&minus;&#8377;'+_pn(paid)+'</span></div>';
+  /* FINAL ROW — handles collect / settled / extra */
+  H+='<div class="sr-final" style="background:'+finalBg+'">'+
+     '<span class="sf-lbl" style="color:'+finalClr+'">'+finalLabel+'</span>'+
+     '<span class="sf-val" style="color:'+finalClr+'">'+finalAmt+'</span>'+
+     '</div>';
+  H+='</div></div>';
 
-  // ── PAYMENT HISTORY ──
+  /* ── PAYMENT HISTORY ── */
   if(b.payLog&&b.payLog.length){
-    H+='<div class="sec-h">Payment History</div>';
-    H+='<div class="ph">';
+    H+='<div class="sec-hd">Payment History<span></span></div>'+
+       '<div class="ph-outer">';
     b.payLog.forEach(function(p){
-      H+='<div class="ph-row">';
-      H+='<div><div class="ph-who">'+(p.who||'Unknown')+(p.phone?' &nbsp;|&nbsp; '+p.phone:'')+'</div>';
-      H+='<div class="ph-dt">'+p.date+(p.note?' — '+p.note:'')+'</div></div>';
-      H+='<div class="ph-amt">+ Rs.'+_pn(p.amount)+'</div>';
-      H+='</div>';
+      H+='<div class="ph-row">'+
+         '<div><div class="ph-who">'+(p.who||'Unknown')+(p.phone?' &nbsp;&middot;&nbsp; '+p.phone:'')+'</div>'+
+         '<div class="ph-dt">'+p.date+(p.note?' &mdash; '+p.note:'')+'</div></div>'+
+         '<div class="ph-amt">+&#8377;'+_pn(p.amount)+'</div>'+
+         '</div>';
     });
     H+='</div>';
   }
 
-  // ── FOOTER ──
-  H+='<div class="foot">';
-  H+='<div class="foot-left"><strong>Jai Bhawani Industries</strong> — Jai Mata Di';
-  if(ph.length)H+='<br/>'+ph.join('  |  ');
-  H+='</div>';
-  H+='<div class="foot-right">Generated via Jai Bhawani Bills App</div>';
-  H+='</div>';
+  /* ── FOOTER ── */
+  H+='<div class="foot">'+
+     '<div class="foot-l">'+
+       '<strong>Jai Bhawani Industries</strong> &mdash; Jai Mata Di'+(ph.length?'<br/>'+ph.join(' &middot; '):'')+
+     '</div>'+
+     '<div class="foot-r">'+
+       'Jai Bhawani Bills App'+(b.billId?'<br/>'+b.billId:'')+
+     '</div>'+
+     '</div>';
 
-  H+='</body></html>';
+  H+='</div></body></html>';
   return H;
 }
 
 function _showPDF(b){
   _pdfBillData=b;
-  const prefs=getPrefs();
-  const html=buildBillHTML(b,prefs);
-  const preview=document.getElementById('pdf-preview');
+  var prefs=getPrefs();
+  var html=buildBillHTML(b,prefs);
+  var preview=document.getElementById('pdf-preview');
   if(!preview)return;
-  // Extract just the <body> content from the bill HTML and inject into a styled div
-  // This keeps it in the same DOM so html2canvas works perfectly
-  const bodyMatch=html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-  const bodyContent=bodyMatch?bodyMatch[1]:html;
-  const styleMatch=html.match(/<style>([\s\S]*?)<\/style>/i);
-  const billStyle=styleMatch?styleMatch[1]:'';
-  var mw=Math.min(window.innerWidth,430);
-  var sc=((mw-16)/794).toFixed(3);
-  preview.innerHTML='<div style="width:100%;overflow:hidden;display:flex;justify-content:center">'
-    +'<div style="transform:scale('+sc+');transform-origin:top left;width:794px;flex-shrink:0">'
-    +'<style>'+billStyle+'</style>'
-    +'<div id="pdf-bill-render" style="background:#fff;width:794px">'
-    +bodyContent+'</div></div></div>';
-  preview.parentElement.style.height=(1123*parseFloat(sc)+20)+'px';
+  // Use iframe so bill CSS is isolated from app styles
+  preview.innerHTML='';
+  preview.style.height='auto';
+  preview.style.background='#f1f5f9';
+  preview.style.padding='0';
+  var iframe=document.createElement('iframe');
+  iframe.style.cssText='width:100%;height:600px;border:none;display:block;background:#f1f5f9';
+  preview.appendChild(iframe);
+  iframe.srcdoc=html;
+  // Resize iframe to full bill height after load
+  iframe.onload=function(){
+    try{
+      var h=iframe.contentDocument.documentElement.scrollHeight;
+      iframe.style.height=Math.max(h,300)+'px';
+    }catch(e){}
+  };
   openM('m-pdf');
 }
+
 function openBillPDF(billId){
   bills=ld(BK);
   const b=bills.find(x=>x.id===billId);if(!b)return;
@@ -2002,114 +2064,142 @@ function _buildPDFFilename(b){
   return 'JBI-'+id+'-'+name+'.pdf';
 }
 
-// ── PDF builder: canvas image to valid PDF ──
-function _canvasToPDFBlob(canvas){
-  var jpeg=canvas.toDataURL('image/jpeg',0.88);
-  var raw=atob(jpeg.split(',')[1]);
-  var rawLen=raw.length;
-  var PW=595,PH=842;
-  var imgW=PW;
-  var imgH=Math.round((canvas.height/canvas.width)*imgW);
-  var pages=Math.ceil(imgH/PH);
-  var NL='\n';
-  // Build PDF as string parts (binary image inserted as Uint8Array)
-  var parts=[];
-  var pos=0;
-  var offsets={};
-  function enc(s){var a=new Uint8Array(s.length);for(var i=0;i<s.length;i++)a[i]=s.charCodeAt(i)&0xff;return a;}
-  function p(s){parts.push(enc(s));pos+=s.length;}
-  // Header
-  p('%PDF-1.4'+NL);
-  // Obj 1: Catalog
-  offsets[1]=pos;
-  p('1 0 obj'+NL+'<</Type /Catalog /Pages 2 0 R>>'+NL+'endobj'+NL);
-  // Obj 3: Image XObject
-  offsets[3]=pos;
-  p('3 0 obj'+NL+'<</Type /XObject /Subtype /Image /Width '+canvas.width+' /Height '+canvas.height
-    +' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+rawLen+'>>'+NL+'stream'+NL);
-  var imgU8=new Uint8Array(rawLen);
-  for(var i=0;i<rawLen;i++)imgU8[i]=raw.charCodeAt(i)&0xff;
-  parts.push(imgU8);pos+=rawLen;
-  p(NL+'endstream'+NL+'endobj'+NL);
-  // Obj 4: Resources
-  offsets[4]=pos;
-  p('4 0 obj'+NL+'<</ProcSet [/PDF /ImageC] /XObject <</Img 3 0 R>>>>'+NL+'endobj'+NL);
-  // Page content+page objects
-  var pageRefs=[];
-  for(var pg=0;pg<pages;pg++){
-    var contN=5+pg*2;
-    var pageN=6+pg*2;
-    var yStart=pg*PH;
-    var sliceH=Math.min(PH,imgH-yStart);
-    var ty=sliceH-imgH+yStart;
-    var cm='q '+imgW+' 0 0 '+imgH+' 0 '+ty+' cm /Img Do Q';
-    offsets[contN]=pos;
-    p(contN+' 0 obj'+NL+'<</Length '+cm.length+'>>'+NL+'stream'+NL+cm+NL+'endstream'+NL+'endobj'+NL);
-    offsets[pageN]=pos;
-    p(pageN+' 0 obj'+NL+'<</Type /Page /Parent 2 0 R /MediaBox [0 0 '+PW+' '+sliceH
-      +'] /Contents '+contN+' 0 R /Resources 4 0 R>>'+NL+'endobj'+NL);
-    pageRefs.push(pageN);
-  }
-  // Obj 2: Pages
-  offsets[2]=pos;
-  p('2 0 obj'+NL+'<</Type /Pages /Count '+pages+' /Kids ['
-    +pageRefs.map(function(n){return n+' 0 R';}).join(' ')+'>>>'+NL+'endobj'+NL);
-  // xref
-  var xrefOff=pos;
-  var maxObj=Math.max.apply(null,Object.keys(offsets).map(Number));
-  var xref='xref'+NL+'0 '+(maxObj+1)+NL+'0000000000 65535 f '+NL;
-  for(var oi=1;oi<=maxObj;oi++){
-    xref+=(offsets[oi]!==undefined?String(offsets[oi]).padStart(10,'0'):'0000000000')+' 00000 n '+NL;
-  }
-  p(xref);
-  p('trailer'+NL+'<</Size '+(maxObj+1)+' /Root 1 0 R>>'+NL+'startxref'+NL+xrefOff+NL+'%%EOF'+NL);
-  // Merge all parts
-  var total=0;for(var i=0;i<parts.length;i++)total+=parts[i].length;
-  var out=new Uint8Array(total);var off=0;
-  for(var i=0;i<parts.length;i++){out.set(parts[i],off);off+=parts[i].length;}
-  return new Blob([out],{type:'application/pdf'});
+// ── Bill share: HTML file download + WhatsApp share ──
+
+function _buildFilename(b, ext){
+  var id=(b.billId||b.id||'bill').replace(/[^a-zA-Z0-9-]/g,'');
+  var name=(b.name||'bill').replace(/[^a-zA-Z0-9 ]/g,'').trim().replace(/\s+/g,'-')||'bill';
+  return 'JBI-'+id+'-'+name+'.'+ext;
 }
 
-async function _generateRealPDF(b){
-  var target=document.getElementById('pdf-bill-render');
-  var tempContainer=null;
-  if(!target){
-    var prefs=getPrefs();
-    var html=buildBillHTML(b,prefs);
-    var bodyMatch=html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-    var bodyContent=bodyMatch?bodyMatch[1]:html;
-    var styleMatch=html.match(/<style>([\s\S]*?)<\/style>/i);
-    var billStyle=styleMatch?styleMatch[1]:'';
-    tempContainer=document.createElement('div');
-    tempContainer.style.cssText='position:fixed;left:-9999px;top:0;width:794px;background:#fff;z-index:-1;pointer-events:none';
-    tempContainer.innerHTML='<style>'+billStyle+'</style><div id="_prt" style="background:#fff;width:400px">'+bodyContent+'</div>';
-    document.body.appendChild(tempContainer);
-    target=tempContainer.querySelector('#_prt');
-    await new Promise(function(r){setTimeout(r,350);});
-  }
-  try{
-    var canvas=await html2canvas(target,{
-      scale:2,useCORS:true,allowTaint:true,backgroundColor:'#ffffff',
-      logging:false,width:794,height:target.scrollHeight,
-      windowWidth:820,scrollX:0,scrollY:0
-    });
-    if(tempContainer)document.body.removeChild(tempContainer);
-    return _canvasToPDFBlob(canvas);
-  }catch(e){
-    if(tempContainer)document.body.removeChild(tempContainer);
-    throw e;
-  }
+function downloadBillHTML(){
+  if(!_pdfBillData){toast('No bill loaded','e');return;}
+  var b=_pdfBillData;
+  var html=buildBillHTML(b,getPrefs());
+  var blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download=_buildFilename(b,'html');
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);a.remove();},2000);
+  toast('Downloaded! Open in browser \u2192 Print \u2192 Save as PDF \u2713');
 }
 
-function _setBtnState(id,loading,defaultTxt){
-  const btn=document.getElementById(id);
-  if(!btn)return;
-  btn.disabled=loading;
-  btn.style.opacity=loading?'.6':'1';
-  if(loading)btn.setAttribute('data-orig',btn.innerHTML);
-  else btn.innerHTML=btn.getAttribute('data-orig')||defaultTxt;
-  if(loading)btn.innerHTML=(id==='btn-share-pdf'?'⏳ Generating…':'⏳ Generating…');
+async function shareBillHTML(){
+  if(!_pdfBillData)return;
+  var b=_pdfBillData;
+  var prefs=getPrefs();
+  var html=buildBillHTML(b,prefs);
+  var filename=_buildFilename(b,'html');
+  var blob=new Blob([html],{type:'text/html'});
+
+  // Try native file share (Android Chrome / iOS Safari)
+  if(navigator.share&&navigator.canShare){
+    var file=new File([blob],filename,{type:'text/html'});
+    if(navigator.canShare({files:[file]})){
+      try{
+        await navigator.share({
+          title:'Bill - Jai Bhawani Industries',
+          files:[file]
+        });
+        toast('Bill shared \u2713');
+        closeM('m-pdf');
+      }catch(err){
+        if(err.name!=='AbortError') _shareViaWAText(b,prefs);
+      }
+      return;
+    }
+  }
+
+  // Fallback: WhatsApp text message
+  _shareViaWAText(b,prefs);
 }
+
+
+// _setBtnState removed - no longer needed
+
+function _downloadBlob(blob,filename){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},3000);
+}
+
+function downloadPDF(){downloadBillHTML();}
+
+function printBillPDF(){
+  if(!_pdfBillData)return;
+  const html=buildBillHTML(_pdfBillData,getPrefs());
+  const win=window.open('','_blank');
+  if(!win){toast('Allow pop-ups and try again','e');return;}
+  win.document.write(html);win.document.close();
+  setTimeout(()=>{win.focus();win.print();},600);
+}
+// ── PDF FILE GENERATION & SHARE ──
+function _buildPDFFilename(b){
+  const id=(b.billId||b.id||'bill').replace(/[^a-zA-Z0-9-]/g,'');
+  const name=(b.name||'bill').replace(/[^a-zA-Z0-9 ]/g,'').trim().replace(/\s+/g,'-');
+  return 'JBI-'+id+'-'+name+'.pdf';
+}
+
+// ── Bill share: HTML file download + WhatsApp share ──
+
+function _buildFilename(b, ext){
+  var id=(b.billId||b.id||'bill').replace(/[^a-zA-Z0-9-]/g,'');
+  var name=(b.name||'bill').replace(/[^a-zA-Z0-9 ]/g,'').trim().replace(/\s+/g,'-')||'bill';
+  return 'JBI-'+id+'-'+name+'.'+ext;
+}
+
+function downloadBillHTML(){
+  if(!_pdfBillData){toast('No bill loaded','e');return;}
+  var b=_pdfBillData;
+  var html=buildBillHTML(b,getPrefs());
+  var blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download=_buildFilename(b,'html');
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);a.remove();},2000);
+  toast('Downloaded! Open in browser \u2192 Print \u2192 Save as PDF \u2713');
+}
+
+async function shareBillHTML(){
+  if(!_pdfBillData)return;
+  var b=_pdfBillData;
+  var prefs=getPrefs();
+  var html=buildBillHTML(b,prefs);
+  var filename=_buildFilename(b,'html');
+  var blob=new Blob([html],{type:'text/html'});
+
+  // Try native file share (Android Chrome / iOS Safari)
+  if(navigator.share&&navigator.canShare){
+    var file=new File([blob],filename,{type:'text/html'});
+    if(navigator.canShare({files:[file]})){
+      try{
+        await navigator.share({
+          title:'Bill - Jai Bhawani Industries',
+          files:[file]
+        });
+        toast('Bill shared \u2713');
+        closeM('m-pdf');
+      }catch(err){
+        if(err.name!=='AbortError') _shareViaWAText(b,prefs);
+      }
+      return;
+    }
+  }
+
+  // Fallback: WhatsApp text message
+  _shareViaWAText(b,prefs);
+}
+
+
+// _setBtnState removed - no longer needed
 
 function _downloadBlob(blob,filename){
   const url=URL.createObjectURL(blob);

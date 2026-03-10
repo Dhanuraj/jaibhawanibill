@@ -747,10 +747,37 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
     <div class="pdf-modal-body" id="pdf-preview"></div>
     <div class="pdf-modal-footer">
       <button class="btn btn-a" onclick="printBillPDF()" style="flex:1;justify-content:center;padding:13px;font-size:14px">🖨 Print</button>
-      <button class="btn btn-wa" onclick="sharePDFViaWA()" style="flex:1;justify-content:center;padding:13px;font-size:14px">📲 Share on WA</button>
+      <button class="btn btn-wa" onclick="openShareChoice()" style="flex:1;justify-content:center;padding:13px;font-size:14px">📲 Share on WA</button>
     </div>
   </div>
 </div>
+
+<!-- SHARE CHOICE SHEET -->
+<div class="ov" id="m-share-choice">
+  <div class="sheet" style="max-width:400px;padding:24px 20px 28px">
+    <div class="sh-knob"></div>
+    <div style="font-family:'Poppins',sans-serif;font-size:16px;font-weight:800;color:var(--ink);margin-bottom:6px">📲 WA pe kya bhejein?</div>
+    <div style="font-size:12px;color:var(--ink3);margin-bottom:20px">Choose karo kaise share karna hai</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button onclick="shareChoiceText()" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--abg);border:1.5px solid var(--abrd);border-radius:14px;cursor:pointer;text-align:left;width:100%" ontouchstart="this.style.opacity='.7'" ontouchend="this.style.opacity='1'">
+        <div style="width:44px;height:44px;border-radius:12px;background:var(--card);border:1.5px solid var(--abrd);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📝</div>
+        <div>
+          <div style="font-family:'Poppins',sans-serif;font-weight:700;font-size:14px;color:var(--ink)">Text Message</div>
+          <div style="font-size:11px;color:var(--ink3);margin-top:2px">Bill ki details text mein bhejo — sabko asaani se padh aata hai</div>
+        </div>
+        <div style="margin-left:auto;color:var(--ink3);font-size:18px">›</div>
+      </button>
+      <button onclick="shareChoiceFile()" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--card);border:1.5px solid var(--border);border-radius:14px;cursor:pointer;text-align:left;width:100%" ontouchstart="this.style.opacity='.7'" ontouchend="this.style.opacity='1'">
+        <div style="width:44px;height:44px;border-radius:12px;background:var(--bg2);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📎</div>
+        <div>
+          <div style="font-family:'Poppins',sans-serif;font-weight:700;font-size:14px;color:var(--ink)">Bill File (HTML)</div>
+          <div style="font-size:11px;color:var(--ink3);margin-top:2px">Poora bill file ke roop mein bhejo — print karne layak</div>
+        </div>
+        <div style="margin-left:auto;color:var(--ink3);font-size:18px">›</div>
+      </button>
+    </div>
+    <button onclick="closeM('m-share-choice')" style="margin-top:14px;width:100%;padding:11px;border:1.5px solid var(--border2);border-radius:12px;background:transparent;color:var(--ink3);font-weight:700;font-size:13px;cursor:pointer;font-family:'Nunito',sans-serif">Cancel</button>
+  </div>
 
 <!-- BILL TYPE SHEET -->
 
@@ -1919,23 +1946,83 @@ function shareCurrentBillWA(){
   {const _ro3=(sT===0&&replOn&&rRows.reduce((s,r)=>s+rowT(r.id),0)>0);if(sT===0&&!_ro3){toast('Add items first','e');return;}}
   const rT=replOn?rRows.reduce((s,r)=>s+rowT(r.id),0):0;
   const adv=advOn?(parseFloat(document.getElementById('adv-amt').value)||0):0;
-  const rawNet=sT-rT-adv;const net=Math.max(0,rawNet);const extra=rawNet<0?Math.abs(rawNet):0;
+  const rawNet=sT-rT-adv;const net=rawNet;const extra=rawNet<0?Math.abs(rawNet):0;
   const party=(document.getElementById('party-name').value||'').trim();
   const partyPhone=(document.getElementById('party-phone').value||'').trim();
   const prefs=getPrefs();
-  let msg='🙏 *Jai Bhawani Industries*\n';
-  msg+=(billType==='in'?'🏭 In-Company Bill':'🚚 Out-Company Bill')+'\n';
-  msg+='🆔 Bill No: *Draft*\n';
-  if(prefs.showParty&&party)msg+=`👤 ${party}${prefs.showPhone&&partyPhone?' · 📞'+partyPhone:''}\n`;
-  if(vehicleOn&&prefs.showVehicle){const d=document.getElementById('veh-driver').value,p=document.getElementById('veh-phone').value,n=document.getElementById('veh-number').value;if(d)msg+=`🚗 ${d}${p?' (📞'+p+')':''}${n?' · 🔢'+n:''}\n`;}
-  msg+=`📅 ${new Date().toLocaleDateString('en-IN')}\n\n`;
-  msg+='📦 *Items Sold*\n';
-  sRows.forEach((r,i)=>{const n=document.getElementById('n-'+r.id)?.value||'';const p=parseFloat(document.getElementById('p-'+r.id)?.value)||0;const q=parseFloat(document.getElementById('q-'+r.id)?.value)||0;if(p*q>0)msg+=`${i+1}. ${n} × ${q} @ ₹${p} = *${INR(p*q)}*\n`;});
-  msg+=`\n💰 *To Collect: ${INR(sT)}*\n`;
-  if(rT>0&&replOn){msg+='\n🔄 *Replacements*\n';rRows.forEach(r=>{const n=document.getElementById('n-'+r.id)?.value||'';const p=parseFloat(document.getElementById('p-'+r.id)?.value)||0;const q=parseFloat(document.getElementById('q-'+r.id)?.value)||0;if(p*q>0)msg+=`• ${n} × ${q} @ ₹${p} = ${INR(p*q)}\n`;});msg+=`🔻 Deducted: ${INR(rT)}\n`;}
-  if(adv>0){const rcv=getReceiver();const ml=payMode==='upi'?'📱 UPI':'💵 Cash';msg+=`💳 Advance: ${INR(adv)} via ${ml}${prefs.showReceiver&&rcv?' — Received by '+rcv:''}\n`;}
-  if(extra>0)msg+=`\n🟢 *Overpaid! Extra: ${INR(extra)}*\n\n_via Jai Bhawani Industries_`;
-  else msg+=`\n✅ *Final Amount to Collect: ${INR(net)}*\n\n_via Jai Bhawani Industries_`;
+  const DIV='━━━━━━━━━━━━━━━━━━━━\n';
+  const div='┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n';
+  let msg='';
+  msg+='🙏 *JAI BHAWANI INDUSTRIES*\n';
+  msg+=DIV;
+  msg+=(billType==='in'?'🏭 *In-Company Bill*':'🚚 *Out-Company Bill*')+'\n';
+  msg+='🆔 *Bill No:* Draft\n';
+  msg+=`📅 *Date:* ${new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}\n`;
+  if(prefs.showParty&&party){
+    msg+=div;
+    msg+=`👤 *Party:* ${party}\n`;
+    if(prefs.showPhone&&partyPhone)msg+=`📞 *Phone:* ${partyPhone}\n`;
+  }
+  if(vehicleOn&&prefs.showVehicle){
+    const d=document.getElementById('veh-driver').value,p=document.getElementById('veh-phone').value,n=document.getElementById('veh-number').value;
+    if(d||n){
+      msg+=div;
+      if(d)msg+=`🚗 *Driver:* ${d}\n`;
+      if(prefs.showPhone&&p)msg+=`📞 *Driver Ph:* ${p}\n`;
+      if(n)msg+=`🔢 *Vehicle:* ${n}\n`;
+    }
+  }
+  msg+=DIV;
+  msg+='📦 *ITEMS SOLD*\n';
+  msg+=div;
+  let si=1;
+  sRows.forEach(r=>{
+    const n=document.getElementById('n-'+r.id)?.value||'';
+    const p=parseFloat(document.getElementById('p-'+r.id)?.value)||0;
+    const q=parseFloat(document.getElementById('q-'+r.id)?.value)||0;
+    if(p*q>0){msg+=`${si++}. *${n}*\n   ${q} pcs × ₹${p} = *${INR(p*q)}*\n`;}
+  });
+  msg+=div;
+  msg+=`   📊 *Subtotal: ${INR(sT)}*\n`;
+  if(rT>0&&replOn){
+    msg+=DIV;
+    msg+='🔄 *REPLACEMENTS / WAPAS*\n';
+    msg+=div;
+    rRows.forEach(r=>{
+      const n=document.getElementById('n-'+r.id)?.value||'';
+      const p=parseFloat(document.getElementById('p-'+r.id)?.value)||0;
+      const q=parseFloat(document.getElementById('q-'+r.id)?.value)||0;
+      if(p*q>0)msg+=`• *${n}*  ${q} pcs × ₹${p} = ${INR(p*q)}\n`;
+    });
+    msg+=div;
+    msg+=`   🔻 *Deducted: ${INR(rT)}*\n`;
+  }
+  if(adv>0){
+    msg+=DIV;
+    const rcv=getReceiver();const ml=payMode==='upi'?'📱 UPI':'💵 Cash';
+    msg+=`💳 *ADVANCE RECEIVED*\n`;
+    msg+=div;
+    msg+=`   Amount: *${INR(adv)}*\n`;
+    msg+=`   Mode: ${ml}\n`;
+    if(prefs.showReceiver&&rcv)msg+=`   Received by: ${rcv}\n`;
+  }
+  msg+=DIV;
+  if(extra>0){
+    msg+=`💸 *WAPAS KARNA HAI*\n`;
+    msg+=div;
+    msg+=`   Customer ko dena hai: *${INR(extra)}*\n`;
+  } else if(net===0&&(adv>0||rT>0)){
+    msg+=`✅ *SETTLED — KOI DUE NAHI*\n`;
+    msg+=div;
+    msg+=`   Sab barabar ho gaya! ₹0 baaki hai.\n`;
+  } else {
+    msg+=`💰 *AMOUNT TO COLLECT*\n`;
+    msg+=div;
+    msg+=`   Customer se lena hai: *${INR(Math.max(0,net))}*\n`;
+  }
+  msg+=DIV;
+  msg+='_Jai Bhawani Industries_\n';
+  msg+='_Powered by JBI Smart Billing_ 🙏';
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
 }
 
@@ -1943,18 +2030,91 @@ function shareCurrentBillWA(){
 function shareBillWA(bid){
   const b=bills.find(x=>x.id===bid);if(!b)return;
   const prefs=getPrefs();
-  let msg='🙏 *Jai Bhawani Industries*\n';
-  msg+=(b.billType==='in'?'🏭 In-Company Bill':'🚚 Out-Company Bill')+'\n';
-  if(prefs.showParty&&b.party)msg+=`👤 ${b.party}${prefs.showPhone&&b.partyPhone?' · 📞'+b.partyPhone:''}\n`;
-  if(b.vehicle&&prefs.showVehicle){const v=b.vehicle;if(v.driver)msg+=`🚗 ${v.driver}${v.phone?' (📞'+v.phone+')':''}${v.number?' · 🔢'+v.number:''}\n`;}
-  msg+=`📅 ${b.date}\n\n📦 *Items Sold*\n`;
-  b.saleItems.forEach((i,idx)=>{if(i.total>0)msg+=`${idx+1}. ${i.name} × ${i.qty} @ ₹${i.price} = *${INR(i.total)}*\n`;});
-  msg+=`\n💰 *To Collect: ${INR(b.sT)}*\n`;
-  if(b.rT>0&&b.replItems?.length){msg+='\n🔄 *Replacements*\n';b.replItems.forEach(i=>{if(i.total>0)msg+=`• ${i.name} × ${i.qty} @ ₹${i.price} = ${INR(i.total)}\n`;});msg+=`🔻 Deducted: ${INR(b.rT)}\n`;}
-  if(b.adv>0){const ml=b.payMode==='upi'?'📱 UPI':'💵 Cash';msg+=`💳 Advance: ${INR(b.adv)} via ${ml}${prefs.showReceiver&&b.upiReceivedBy?' ('+b.upiReceivedBy+')':''}\n`;}
   const rem=billRemainingDue(b);
-  if(rem<0)msg+=`\n🟢 *Extra to Return: ${INR(Math.abs(rem))}*\n\n_via Jai Bhawani Industries_`;
-  else msg+=`\n✅ *Final Amount to Collect: ${INR(rem)}*\n\n_via Jai Bhawani Industries_`;
+  const DIV='━━━━━━━━━━━━━━━━━━━━\n';
+  const div='┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n';
+  let msg='';
+  msg+='🙏 *JAI BHAWANI INDUSTRIES*\n';
+  msg+=DIV;
+  msg+=(b.billType==='in'?'🏭 *In-Company Bill*':'🚚 *Out-Company Bill*')+'\n';
+  if(prefs.showBillId&&b.billId)msg+=`🆔 *Bill No:* ${b.billId}\n`;
+  msg+=`📅 *Date:* ${b.date}\n`;
+  if(prefs.showParty&&b.party){
+    msg+=div;
+    msg+=`👤 *Party:* ${b.party}\n`;
+    if(prefs.showPhone&&b.partyPhone)msg+=`📞 *Phone:* ${b.partyPhone}\n`;
+  }
+  if(b.vehicle&&prefs.showVehicle){
+    const v=b.vehicle;
+    if(v.driver||v.number){
+      msg+=div;
+      if(v.driver)msg+=`🚗 *Driver:* ${v.driver}\n`;
+      if(prefs.showPhone&&v.phone)msg+=`📞 *Driver Ph:* ${v.phone}\n`;
+      if(v.number)msg+=`🔢 *Vehicle:* ${v.number}\n`;
+    }
+  }
+  if(b.saleItems&&b.saleItems.length&&b.sT>0){
+    msg+=DIV;
+    msg+='📦 *ITEMS SOLD*\n';
+    msg+=div;
+    b.saleItems.forEach((i,idx)=>{
+      if(i.total>0)msg+=`${idx+1}. *${i.name}*\n   ${i.qty} pcs × ₹${i.price} = *${INR(i.total)}*\n`;
+    });
+    msg+=div;
+    msg+=`   📊 *Subtotal: ${INR(b.sT)}*\n`;
+  }
+  if(b.rT>0&&b.replItems?.length&&prefs.showReplacements){
+    msg+=DIV;
+    msg+='🔄 *REPLACEMENTS / WAPAS*\n';
+    msg+=div;
+    b.replItems.forEach(i=>{
+      if(i.total>0)msg+=`• *${i.name}*  ${i.qty} pcs × ₹${i.price} = ${INR(i.total)}\n`;
+    });
+    msg+=div;
+    msg+=`   🔻 *Deducted: ${INR(b.rT)}*\n`;
+  }
+  if(b.adv>0){
+    msg+=DIV;
+    const ml=b.payMode==='upi'?'📱 UPI':'💵 Cash';
+    msg+=`💳 *ADVANCE RECEIVED*\n`;
+    msg+=div;
+    msg+=`   Amount: *${INR(b.adv)}*\n`;
+    msg+=`   Mode: ${ml}\n`;
+    if(prefs.showReceiver&&b.upiReceivedBy)msg+=`   Received by: ${b.upiReceivedBy}\n`;
+  }
+  if(b.payLog&&b.payLog.length){
+    const collected=b.payLog.filter(p=>p.amount>0);
+    const returned=b.payLog.filter(p=>p.amount<0);
+    if(collected.length){
+      msg+=DIV;
+      msg+='💰 *PAYMENTS RECEIVED*\n';
+      msg+=div;
+      collected.forEach(p=>msg+=`   +${INR(p.amount)} — ${p.who||''}${p.date?' ('+p.date+')':''}\n`);
+    }
+    if(returned.length){
+      msg+=DIV;
+      msg+='💸 *WAPAS DIYA*\n';
+      msg+=div;
+      returned.forEach(p=>msg+=`   ${INR(Math.abs(p.amount))} — ${p.who||''}${p.note?' ('+p.note+')':''}\n`);
+    }
+  }
+  msg+=DIV;
+  if(rem<0){
+    msg+=`💸 *WAPAS KARNA HAI*\n`;
+    msg+=div;
+    msg+=`   Customer ko dena hai: *${INR(Math.abs(rem))}*\n`;
+  } else if(rem===0&&(b.adv>0||(b.payLog&&b.payLog.length))){
+    msg+=`✅ *SETTLED — KOI DUE NAHI*\n`;
+    msg+=div;
+    msg+=`   Sab barabar ho gaya! ₹0 baaki hai.\n`;
+  } else {
+    msg+=`💰 *AMOUNT TO COLLECT*\n`;
+    msg+=div;
+    msg+=`   Customer se lena hai: *${INR(Math.max(0,rem))}*\n`;
+  }
+  msg+=DIV;
+  msg+='_Jai Bhawani Industries_\n';
+  msg+='_Powered by JBI Smart Billing_ 🙏';
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
 }
 
@@ -2190,6 +2350,51 @@ function _showPDF(b){
   openM('m-pdf');
 }
 
+function shareChoiceText(){
+  closeM('m-share-choice');
+  // reuse existing text WA function based on current bill data
+  if(_pdfBillData&&_pdfBillData.id&&_pdfBillData.id!=='tmp'){
+    shareBillWA(_pdfBillData.id);
+  } else {
+    shareCurrentBillWA();
+  }
+}
+function shareChoiceFile(){
+  closeM('m-share-choice');
+  if(!_pdfBillData)return;
+  const b=_pdfBillData;
+  const prefs=getPrefs();
+  const html=buildBillHTML(b,prefs);
+  const blob=new Blob([html],{type:'text/html'});
+  const fname=(b.billId||'Bill')+'-'+((b.party||b.name||'JBI').replace(/\s+/g,'_'))+'.html';
+  // Try Web Share API (works on mobile)
+  if(navigator.share&&navigator.canShare){
+    const file=new File([blob],fname,{type:'text/html'});
+    if(navigator.canShare({files:[file]})){
+      navigator.share({
+        title:'Bill — '+(b.party||b.name||'JBI'),
+        text:'Jai Bhawani Industries — Bill '+(b.billId||''),
+        files:[file]
+      }).catch(e=>{if(e.name!=='AbortError')fallbackDownload(blob,fname);});
+      return;
+    }
+  }
+  // Fallback: download the file, user can manually share
+  fallbackDownload(blob,fname);
+  toast('File download ho gayi — WA pe manually share karo 📎');
+}
+function fallbackDownload(blob,fname){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=fname;
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);
+}
+function openShareChoice(){
+  if(!_pdfBillData)return;
+  closeM('m-pdf');
+  openM('m-share-choice');
+}
 function openBillPDF(billId){
   bills=ld(BK);
   const b=bills.find(x=>x.id===billId);if(!b)return;
